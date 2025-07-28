@@ -1,8 +1,8 @@
-# Dated Money
+# `dated-money`
 
-Dated Money is a Python library for manipulating monetary values with control over the date on which currency conversions take place. It represents each monetary value as an amount (stored as a Decimal in cents) and a currency, along with a corresponding date.
+A Python library for manipulating monetary values with control over the date on which currency conversions take place. It represents each monetary value as an amount (stored as a Decimal in cents) and a currency, along with a corresponding date.
 
-## Why This Library Exists
+## Motivation
 
 If you're handling multi-currency transactions, you need to know not just "how much" but also "when" - because exchange rates change daily. This is critical for:
 
@@ -10,7 +10,7 @@ If you're handling multi-currency transactions, you need to know not just "how m
 - **Accurate financial reporting**: Use historical exchange rates for past transactions
 - **Multi-currency portfolios**: Keep amounts in their original currency until you decide to convert
 
-For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immediately converted to €130, you need to record both the original amount AND the historical rate used. That's what Dated Money does.
+For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immediately converted to €130, you need to record both the original amount AND the historical rate used. That's what `dated-money` does.
 
 ## Key Features
 
@@ -18,7 +18,6 @@ For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immedia
 - **Multiple rate sources**: Supports local repositories, Supabase, and exchangerate-api.com
 - **Automatic rate fallback**: If rates aren't available for a specific date, automatically searches up to 10 days back
 - **Type-safe**: Comprehensive type hints throughout the codebase
-- **Well-tested**: Extensive test suite with error case coverage
 
 
 ## Features
@@ -30,7 +29,7 @@ For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immedia
 
 ## Installation
 
-You can install Dated Money using uv (recommended):
+You can install `dated-money` using uv (recommended):
 
 ```bash
 uv add dated-money
@@ -54,7 +53,7 @@ uv sync
 
 ## Usage
 
-### Real-World Example
+### Example
 
 Imagine you run a European company receiving payments in multiple currencies:
 
@@ -80,7 +79,7 @@ print(f"Total revenue: {total}")
 # Output: Total revenue: €1051.90
 ```
 
-### Basic Examples
+### More Examples
 
 ```python
 from decimal import Decimal as Dec
@@ -172,7 +171,7 @@ assert price_gbp.currency == Currency.GBP
 
 ### Configuring Exchange Rates
 
-Dated Money supports multiple sources for exchange rates, checked in this order:
+`dated-money` supports multiple sources for exchange rates, checked in this order:
 
 1. **Local SQLite cache** (fastest)
 2. **Local git repository** (for offline use)
@@ -181,7 +180,7 @@ Dated Money supports multiple sources for exchange rates, checked in this order:
 
 #### Rate Fallback Behavior
 
-If exchange rates are not available for the requested date, Dated Money automatically searches for rates from previous dates, going back up to 10 days. This ensures that currency conversions work even on weekends or holidays when fresh rates might not be available. When fallback rates are used, a log message indicates which date's rates were actually used.
+If exchange rates are not available for the requested date, `dated-money` automatically searches for rates from previous dates, going back up to 10 days. This ensures that currency conversions work even on weekends or holidays when fresh rates might not be available. When fallback rates are used, a log message indicates which date's rates were actually used.
 
 #### Environment Variables
 
@@ -273,4 +272,4 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 
 ## License
 
-Dated Money is released under the [MIT License](https://opensource.org/licenses/MIT).
+`dated-money` is released under the [MIT License](https://opensource.org/licenses/MIT).
