@@ -1,0 +1,19 @@
+date,amount,currency,description
+2022-01-07,1000.00,USD,US client payment
+2022-01-07,500.00,GBP,UK consulting fee
+2022-02-15,50000.00,JPY,Japanese software license
+2022-04-20,1000.00,USD,US client payment Q2
+2022-06-10,5000.00,THB,Thai web development
+2022-07-14,1500.00,CHF,Swiss banking client
+2022-09-01,800.00,GBP,UK autumn project
+2022-11-15,10000.00,SEK,Swedish contract
+2023-01-10,2000.00,USD,New year enterprise license
+2023-03-22,3000.00,PLN,Polish development work
+2023-05-15,1200.00,CAD,Canadian consulting
+2023-07-04,1000.00,USD,Independence day sale
+2023-09-15,2500.00,AUD,Australian partnership
+2023-10-20,1800.00,EUR,Direct EUR payment
+2023-12-01,5000.00,NOK,Norwegian winter project
+2024-01-15,1000.00,USD,Annual subscription renewal
+2024-02-14,888.00,CNY,Valentine's day special
+2024-03-10,1500.00,GBP,UK spring campaign
