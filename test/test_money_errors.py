@@ -26,7 +26,7 @@ class TestMoneyErrorCases:
             mock_get_rates.return_value = None
             
             money = Eur(100)
-            with pytest.raises(RuntimeError, match="Could not find rates"):
+            with pytest.raises(RuntimeError, match="Could not find exchange rates"):
                 money.cents(Currency.USD)
     
     def test_currency_conversion_missing_rate(self):
@@ -41,7 +41,7 @@ class TestMoneyErrorCases:
             }
             
             money = Eur(100)
-            with pytest.raises(RuntimeError, match="Could not find conversion rate for"):
+            with pytest.raises(RuntimeError, match="is not available in the exchange rates"):
                 money.cents(Currency.USD)
     
     def test_currency_conversion_source_rate_missing(self):
@@ -56,7 +56,7 @@ class TestMoneyErrorCases:
             }
             
             money = Eur(100)
-            with pytest.raises(RuntimeError, match="Could not find conversion rate for"):
+            with pytest.raises(RuntimeError, match="is not available in the exchange rates"):
                 money.cents(Currency.USD)
     
     def test_invalid_date_string(self):
@@ -70,7 +70,7 @@ class TestMoneyErrorCases:
         """Test parsing of invalid string representations."""
         Eur = Money(Currency.EUR, "2024-01-15")
         # Test with wrong number of components (just one)
-        with pytest.raises(RuntimeError, match="Cannot interpret string for parsing"):
+        with pytest.raises(ValueError, match="Cannot parse money string"):
             Eur.parse("single")
         
         # Test with invalid amount

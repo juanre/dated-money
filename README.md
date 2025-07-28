@@ -152,6 +152,8 @@ assert Eur(20, 'aud') + Eur(20, 'gbp') == Aud(20, 'aud') + Aud(20, 'gbp')
 
 ### Using a Single Money Class
 
+**Note**: `Money()` is a factory that returns a *class*, not an instance. You use it to create a customized Money class for your base currency, then create instances from that class.
+
 In normal use, you will probably create a single Money class with your preferred base currency and use it to handle monetary values in various currencies:
 
 ```python

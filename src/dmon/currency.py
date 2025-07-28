@@ -341,4 +341,25 @@ ReverseCurrencySymbols["£"] = Currency.GBP
 def to_currency_enum(currency: Union[str, Currency]) -> Currency:
     if isinstance(currency, Currency):
         return currency
-    return Currency(ReverseCurrencySymbols.get(currency, currency.lower()))
+    
+    if not isinstance(currency, str):
+        raise TypeError(f"Expected Currency or str, got {type(currency).__name__}")
+    
+    # Try symbol first (e.g., '$', '€')
+    if currency in ReverseCurrencySymbols:
+        currency_code = ReverseCurrencySymbols[currency]
+    else:
+        # Try as currency code (e.g., 'USD', 'usd')
+        currency_code = currency.lower()
+    
+    try:
+        return Currency(currency_code)
+    except ValueError:
+        # Provide helpful error message
+        if len(currency) == 1:
+            raise ValueError(f"'{currency}' is not a recognized currency symbol")
+        else:
+            raise ValueError(
+                f"'{currency}' is not a valid currency code. "
+                f"Use a 3-letter code like 'USD', 'EUR', or 'GBP'"
+            )

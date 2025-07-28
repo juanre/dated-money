@@ -3,7 +3,7 @@
 ## The Problem It Solves
 
 When dealing with multiple currencies in business, you need to track:
-1. The **original amount and currency** 
+1. The **original amount and currency**
 2. The **date** of the transaction
 3. The **exchange rate** used for conversion
 
@@ -20,7 +20,7 @@ payment = CompanyMoney(1000, 'USD', on_date='2024-01-15')
 
 This tracks:
 - Amount: $1000
-- Currency: USD  
+- Currency: USD
 - Date: January 15, 2024
 - Conversion rate: Whatever USD/EUR was on that date
 
@@ -49,7 +49,7 @@ total = usd_payment + gbp_payment + thb_payment
 print(f"Total: {total}")
 ```
 
-## Why Dates Matter: A Practical Example
+## A Practical Example
 
 Consider a business that receives payments throughout the year:
 
@@ -60,7 +60,7 @@ CompanyMoney = Money(Currency.EUR)
 q1_sale = CompanyMoney(10000, 'USD', on_date='2024-01-15')
 print(f"Q1: {q1_sale} = {q1_sale.to('EUR')}")  # $10,000.00 = €9,213.80
 
-# Q3 sale when EUR weakened  
+# Q3 sale when EUR weakened
 q3_sale = CompanyMoney(10000, 'USD', on_date='2024-07-15')
 print(f"Q3: {q3_sale} = {q3_sale.to('EUR')}")  # $10,000.00 = €9,524.60
 
@@ -102,5 +102,3 @@ current_value = CurrentMoney(10000, 'USD')
 print(f"Value when received: {jan_usd.to('EUR')}")
 print(f"Value if converted today: {current_value}")
 ```
-
-This is crucial for understanding realized vs. unrealized currency gains/losses.

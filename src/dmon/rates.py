@@ -26,9 +26,13 @@ load_dotenv()
 
 def parse_date(dt: Union[date, str]) -> date:
     if isinstance(dt, str):
-        return datetime.strptime(dt, "%Y-%m-%d").date()
+        try:
+            return datetime.strptime(dt, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError(f"Invalid date format: '{dt}'. Expected YYYY-MM-DD format.")
     if isinstance(dt, date):
         return dt
+    raise TypeError(f"Expected date or str, got {type(dt).__name__}")
 
 
 def parse_optional_date(dt: Union[str, date, None]) -> Union[date, None]:

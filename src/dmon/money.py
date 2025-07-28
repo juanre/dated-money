@@ -90,13 +90,17 @@ class BaseMoney:
         rates = get_rates(rates_date, currency, self.currency)
 
         if rates is None:
-            raise RuntimeError(f"Could not find rates for {rates_date}")
+            raise RuntimeError(
+                f"Could not find exchange rates for {rates_date}. "
+                f"Tried local cache, git repo, Supabase, and exchangerate-api.com. "
+                f"Check your configuration and network connection."
+            )
 
         if rates[currency] is None:
-            raise RuntimeError(f"Could not find conversion rate for {currency}")
+            raise RuntimeError(f"Currency {currency} is not available in the exchange rates for {rates_date}")
 
         if rates[self.currency] is None:
-            raise RuntimeError(f"Could not find conversion rate for {self.currency}")
+            raise RuntimeError(f"Currency {self.currency} is not available in the exchange rates for {rates_date}")
 
         return self._cents * Decimal(str(rates[currency])) / Decimal(str(rates[self.currency]))
 
@@ -246,7 +250,10 @@ class BaseMoney:
             currency, amount = components
             on_date = None
         else:
-            raise RuntimeError("Cannot interpret string for parsing")
+            raise ValueError(
+                f"Cannot parse money string: '{string}'. "
+                f"Expected format: 'YYYY-MM-DD CURRENCY AMOUNT' or 'CURRENCY AMOUNT'"
+            )
 
         return cls(amount, currency, on_date)
 
