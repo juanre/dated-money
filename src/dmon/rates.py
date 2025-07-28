@@ -2,6 +2,7 @@ import json
 import os
 import sqlite3
 import subprocess
+import sys
 import threading
 import time
 from contextlib import contextmanager
@@ -81,7 +82,23 @@ CONNECTION_POOL = None
 def get_db_connection(database_dir: Optional[str] = None):
     global CONNECTION_POOL
     if CONNECTION_POOL is None:
-        ddir = Path(database_dir or os.environ.get("DMON_RATES_CACHE", "."))
+        if database_dir:
+            ddir = Path(database_dir)
+        elif "DMON_RATES_CACHE" in os.environ:
+            ddir = Path(os.environ["DMON_RATES_CACHE"])
+        else:
+            # Use standard cache directory based on platform
+            if sys.platform == "darwin":
+                # macOS: ~/Library/Caches/dmon
+                ddir = Path.home() / "Library" / "Caches" / "dmon"
+            elif sys.platform == "win32":
+                # Windows: %LOCALAPPDATA%\dmon\cache
+                ddir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "dmon" / "cache"
+            else:
+                # Linux/Unix: ~/.cache/dmon
+                cache_home = os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")
+                ddir = Path(cache_home) / "dmon"
+        
         ddir.mkdir(parents=True, exist_ok=True)
         CONNECTION_POOL = ConnectionPool(str(ddir / "exchange-rates.db"))
 

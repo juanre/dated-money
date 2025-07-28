@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated from `os.path` to `pathlib` for file operations
 - Converted string formatting to f-strings throughout
 - Improved error messages with consistent formatting
+- Cache database now uses platform-specific standard locations by default:
+  - macOS: `~/Library/Caches/dmon/exchange-rates.db`
+  - Linux: `~/.cache/dmon/exchange-rates.db`
+  - Windows: `%LOCALAPPDATA%\dmon\cache\exchange-rates.db`
 - Fixed bare `except:` clause to catch specific `sqlite3.Error`
 - Enhanced precision handling in currency conversion tests
 - Modernized Python version support (3.9+)
@@ -41,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Unnecessary UTF-8 encoding declarations (`# -*- coding: utf-8 -*-`)
 - Redundant type imports that are deprecated in modern Python
+- Pre-populated exchange rate database from distribution
+
+### Security
+- No longer distributing third-party exchange rate data with the package
 
 ## [1.0.2] - Previous Release
 

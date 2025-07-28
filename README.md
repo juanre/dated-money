@@ -183,7 +183,7 @@ If exchange rates are not available for the requested date, Dated Money automati
 
 #### Environment Variables
 
-- `DMON_RATES_CACHE`: Directory for the SQLite cache database (default: current directory)
+- `DMON_RATES_CACHE`: Directory for the SQLite cache database (default: platform-specific cache directory - see below)
 
 - `DMON_RATES_REPO`: Directory containing a git repository with exchange rates in a `money` subdirectory
 
@@ -206,21 +206,25 @@ Rate files should be named `yyyy-mm-dd-rates.json` and contain:
     }
 ```
 
+### Cache Database Location
+
+By default, the cache database is stored in platform-specific locations:
+- **macOS**: `~/Library/Caches/dmon/exchange-rates.db`
+- **Linux**: `~/.cache/dmon/exchange-rates.db` (or `$XDG_CACHE_HOME/dmon/exchange-rates.db`)
+- **Windows**: `%LOCALAPPDATA%\dmon\cache\exchange-rates.db`
+
+You can override this by setting the `DMON_RATES_CACHE` environment variable to your preferred directory.
+
 ### Creating the Cache Database
 
-To create the cache database, follow these steps:
+The cache database is created automatically when you first use the library. To manually create it or populate it with historical data:
 
-1. Set the `DMON_RATES_CACHE` environment variable:
-   ```
-   export DMON_RATES_CACHE=~/.dmon
-   ```
-
-2. Create the database cache table:
+1. Create the database cache table:
    ```
    dmon-rates --create-table
    ```
 
-If you have a paid API key for https://exchangerate-api.com, you can set the `DMON_EXCHANGERATE_API_KEY` environment variable and create your cache with:
+2. If you have a paid API key for https://exchangerate-api.com, you can populate your cache with historical data:
 
 ```
 dmon-rates --fetch-rates 2021-10-10:2021-10-20

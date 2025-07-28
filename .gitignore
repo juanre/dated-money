@@ -15,4 +15,6 @@ out.png
 *_flymake.py
 poetry.lock
 .env
+exchange-rates.db
+res/
 
