@@ -24,4 +24,4 @@ jobs:
         run: pip install black
 
       - name: Check code formatting with Black
-        run: black --check .
+        run: black --check --line-length 99 .
