@@ -5,7 +5,14 @@ Dated Money is a Python library for manipulating monetary values with control ov
 It differs from the [money](https://pypi.org/project/money/) package in that it treats the date as a
 first-class element.
 
-It downloads and saves today's conversion rates from https://www.exchangerate-api.com/ using your API key (see below).  You may need a paid account for the fetching of rates for days other than today to work.
+## Key Features
+
+- **Date-aware currency conversion**: Perform accurate conversions based on historical exchange rates
+- **Multiple rate sources**: Supports local repositories, Supabase, and exchangerate-api.com
+- **Automatic rate fallback**: If rates aren't available for a specific date, automatically searches up to 10 days back
+- **Type-safe**: Comprehensive type hints throughout the codebase
+- **Well-tested**: Extensive test suite with error case coverage
+- **Modern Python**: Uses pathlib, f-strings, and proper logging
 
 
 ## Features
@@ -17,16 +24,26 @@ It downloads and saves today's conversion rates from https://www.exchangerate-ap
 
 ## Installation
 
-You can install Dated Money using uv:
+You can install Dated Money using uv (recommended):
 
-```
+```bash
 uv add dated-money
 ```
 
 or pip:
 
-```
+```bash
 pip install dated-money
+```
+
+### Development Installation
+
+For development, clone the repository and install with development dependencies:
+
+```bash
+git clone https://github.com/juanre/dmon
+cd dmon
+uv sync
 ```
 
 ## Usage
@@ -121,13 +138,30 @@ assert price_gbp.currency == Currency.GBP
 
 ### Configuring Exchange Rates
 
-Dated Money provides flexibility in configuring exchange rates through environment variables:
+Dated Money supports multiple sources for exchange rates, checked in this order:
 
-- `DMON_RATES_CACHE`: Set this to a directory where the library can maintain a cache of exchange rates (stored in an SQLite database).
+1. **Local SQLite cache** (fastest)
+2. **Local git repository** (for offline use)
+3. **Supabase** (for shared team rates)
+4. **exchangerate-api.com** (for fresh rates)
 
-- `DMON_EXCHANGERATE_API_KEY`: If the rates file for a given date is not found in the repository or cache, the library will attempt to download it from https://exchangerate-api.com. Set this environment variable to your API key. Note that you may need a paid account to download historical data.
+#### Rate Fallback Behavior
 
-- `DMON_RATES_REPO`: Set this to a directory containing a git repository with the exchange rates in a `money` subdirectory. The rates should be stored in files named `yyyy-mm-dd-rates.json`, and contain a dictionary like:
+If exchange rates are not available for the requested date, Dated Money automatically searches for rates from previous dates, going back up to 10 days. This ensures that currency conversions work even on weekends or holidays when fresh rates might not be available. When fallback rates are used, a log message indicates which date's rates were actually used.
+
+#### Environment Variables
+
+- `DMON_RATES_CACHE`: Directory for the SQLite cache database (default: current directory)
+
+- `DMON_RATES_REPO`: Directory containing a git repository with exchange rates in a `money` subdirectory
+
+- `SUPABASE_URL` and `SUPABASE_KEY`: Credentials for Supabase integration
+
+- `DMON_EXCHANGERATE_API_KEY`: API key for exchangerate-api.com (required for historical rates on paid plans)
+
+#### Rate File Format
+
+Rate files should be named `yyyy-mm-dd-rates.json` and contain:
 
 
 ```
@@ -158,6 +192,35 @@ If you have a paid API key for https://exchangerate-api.com, you can set the `DM
 
 ```
 dmon-rates --fetch-rates 2021-10-10:2021-10-20
+```
+
+## Development
+
+This project uses modern Python development tools:
+
+- **uv** for package management
+- **black** for code formatting
+- **ruff** for linting
+- **mypy** for type checking
+- **pytest** for testing
+
+### Running Tests
+
+```bash
+uv run pytest
+```
+
+### Code Quality
+
+```bash
+# Format code
+uv run black src/ test/
+
+# Run linter
+uv run ruff check src/ test/
+
+# Type checking
+uv run mypy src/
 ```
 
 ## Contributing
