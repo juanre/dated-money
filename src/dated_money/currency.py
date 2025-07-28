@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Union
+from typing import Union
 
 
 class Currency(Enum):
@@ -165,7 +165,7 @@ class Currency(Enum):
     ZMW = "zmw"
 
 
-CurrencySymbols: Dict[Currency, str] = {
+CurrencySymbols: dict[Currency, str] = {
     Currency.AED: "د.إ",
     Currency.AFN: "؋",
     Currency.ALL: "Lek ",
@@ -329,7 +329,7 @@ CurrencySymbols: Dict[Currency, str] = {
 }
 
 
-ReverseCurrencySymbols: Dict[str, Currency] = {v: k for k, v in CurrencySymbols.items()}
+ReverseCurrencySymbols: dict[str, Currency] = {v: k for k, v in CurrencySymbols.items()}
 
 # These can be used in several currencies, choose one:
 ReverseCurrencySymbols["C$"] = Currency.CAD
@@ -341,25 +341,25 @@ ReverseCurrencySymbols["£"] = Currency.GBP
 def to_currency_enum(currency: Union[str, Currency]) -> Currency:
     if isinstance(currency, Currency):
         return currency
-    
+
     if not isinstance(currency, str):
         raise TypeError(f"Expected Currency or str, got {type(currency).__name__}")
-    
+
     # Try symbol first (e.g., '$', '€')
     if currency in ReverseCurrencySymbols:
-        currency_code = ReverseCurrencySymbols[currency]
+        return ReverseCurrencySymbols[currency]
     else:
         # Try as currency code (e.g., 'USD', 'usd')
         currency_code = currency.lower()
-    
+
     try:
         return Currency(currency_code)
-    except ValueError:
+    except ValueError as e:
         # Provide helpful error message
         if len(currency) == 1:
-            raise ValueError(f"'{currency}' is not a recognized currency symbol")
+            raise ValueError(f"'{currency}' is not a recognized currency symbol") from e
         else:
             raise ValueError(
                 f"'{currency}' is not a valid currency code. "
                 f"Use a 3-letter code like 'USD', 'EUR', or 'GBP'"
-            )
+            ) from e

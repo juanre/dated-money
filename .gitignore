@@ -17,4 +17,3 @@ poetry.lock
 .env
 exchange-rates.db
 res/
-

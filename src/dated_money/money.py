@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, ClassVar, Optional, Tuple, Type, Union
+from typing import Any, ClassVar, Optional, Union
 
 from dated_money.currency import Currency, CurrencySymbols, to_currency_enum
 from dated_money.rates import format_date, get_rates, parse_optional_date
@@ -97,10 +97,14 @@ class BaseMoney:
             )
 
         if rates[currency] is None:
-            raise RuntimeError(f"Currency {currency} is not available in the exchange rates for {rates_date}")
+            raise RuntimeError(
+                f"Currency {currency} is not available in the exchange rates for {rates_date}"
+            )
 
         if rates[self.currency] is None:
-            raise RuntimeError(f"Currency {self.currency} is not available in the exchange rates for {rates_date}")
+            raise RuntimeError(
+                f"Currency {self.currency} is not available in the exchange rates for {rates_date}"
+            )
 
         return self._cents * Decimal(str(rates[currency])) / Decimal(str(rates[self.currency]))
 
@@ -132,7 +136,7 @@ class BaseMoney:
         """
         return self.__class__(cents_str(self._cents), self.currency, on_date=on_date)
 
-    def normalized_amounts(self, o: "BaseMoney") -> Tuple[Decimal, Decimal]:
+    def normalized_amounts(self, o: "BaseMoney") -> tuple[Decimal, Decimal]:
         """Convert both money amounts to the base currency for comparison.
 
         Args:
@@ -263,7 +267,7 @@ def Money(
     base_date: Optional[Union[date, str]] = None,
     output_currency: Optional[Union[Currency, str]] = None,
     class_name: Optional[str] = "",
-) -> Type[BaseMoney]:
+) -> type[BaseMoney]:
     """Factory that creates a class for computing with a currency on a date."""
     c_name = class_name or "Money_" + (
         format_date(base_date) if base_date is not None else "current"

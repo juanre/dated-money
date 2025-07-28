@@ -18,13 +18,13 @@ from pathlib import Path
 # Set up test database for this example
 os.environ["DMON_RATES_CACHE"] = str(Path(__file__).parent.parent / "test" / "res")
 
-from dated_money import Money, Currency
+from dated_money import Currency, Money
 
 
 def read_transactions(csv_file):
     """Read transactions from CSV file."""
     transactions = []
-    with open(csv_file, "r") as f:
+    with open(csv_file) as f:
         reader = csv.DictReader(f)
         for row in reader:
             transactions.append(

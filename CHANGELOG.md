@@ -70,7 +70,7 @@ from dated_money import Money, Currency
 # Old
 dmon>=1.0
 
-# New  
+# New
 dated-money>=2.0
 ```
 

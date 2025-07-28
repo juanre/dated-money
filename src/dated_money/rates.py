@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import requests
 from dateutil.relativedelta import relativedelta
@@ -28,8 +28,8 @@ def parse_date(dt: Union[date, str]) -> date:
     if isinstance(dt, str):
         try:
             return datetime.strptime(dt, "%Y-%m-%d").date()
-        except ValueError:
-            raise ValueError(f"Invalid date format: '{dt}'. Expected YYYY-MM-DD format.")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format: '{dt}'. Expected YYYY-MM-DD format.") from e
     if isinstance(dt, date):
         return dt
     raise TypeError(f"Expected date or str, got {type(dt).__name__}")
@@ -97,12 +97,16 @@ def get_db_connection(database_dir: Optional[str] = None):
                 ddir = Path.home() / "Library" / "Caches" / "dated_money"
             elif sys.platform == "win32":
                 # Windows: %LOCALAPPDATA%\dated_money\cache
-                ddir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "dated_money" / "cache"
+                ddir = (
+                    Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+                    / "dated_money"
+                    / "cache"
+                )
             else:
                 # Linux/Unix: ~/.cache/dated_money
                 cache_home = os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")
                 ddir = Path(cache_home) / "dated_money"
-        
+
         ddir.mkdir(parents=True, exist_ok=True)
         CONNECTION_POOL = ConnectionPool(str(ddir / "exchange-rates.db"))
 
@@ -126,7 +130,7 @@ def maybe_create_cache_table():
         conn.commit()
 
 
-def cache_day_rates(dt: Union[date, str], rates: Dict[str, float]):
+def cache_day_rates(dt: Union[date, str], rates: dict[str, float]):
     maybe_create_cache_table()
     with get_db_connection() as conn:
         valid_currencies = {currency.value for currency in Currency}
@@ -164,7 +168,7 @@ def fill_cache_db():
             cache_day_rates(date_str, rates)
 
 
-def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, float]]:
+def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[dict[str, float]]:
     """Fetches exchange rates from a local git repository for a given
     date. It looks for the repository in the environment variable
     DMON_RATES_REPO, and the rates file in
@@ -225,7 +229,7 @@ def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, flo
     return None
 
 
-def fetch_rates_from_exchangerate_api(on_date: Union[date, str]) -> Optional[Dict[str, float]]:
+def fetch_rates_from_exchangerate_api(on_date: Union[date, str]) -> Optional[dict[str, float]]:
     """Fetches currency exchange rates from exchangerate_api.com.
 
     Arguments:
@@ -289,7 +293,7 @@ def get_supabase_client() -> Optional["Client"]:
     return create_client(url, key)
 
 
-def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[Dict[str, float]]:
+def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[dict[str, float]]:
     """Fetches exchange rates from Supabase for a given date.
 
     Arguments:
@@ -323,7 +327,7 @@ def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[Dict[str,
 
 def find_rates_for_date(
     on_date: Union[date, str],
-) -> Tuple[Optional[Dict[str, float]], Optional[date]]:
+) -> tuple[Optional[dict[str, float]], Optional[date]]:
     """Attempts to find rates for a given date, falling back to previous dates if needed.
 
     Arguments:
@@ -361,7 +365,7 @@ def find_rates_for_date(
 
 def get_rates(
     on_date: Union[date, str], *currencies: Currency
-) -> Optional[Dict[Currency, Optional[Decimal]]]:
+) -> Optional[dict[Currency, Optional[Decimal]]]:
     """Retrieves the exchange rates for the specified currencies on a given date.
 
     **Rate Fallback Behavior:**

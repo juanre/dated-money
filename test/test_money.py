@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-
-
 from decimal import Decimal as Dec
-from dated_money.money import Money
-from dated_money.currency import Currency
 
+from dated_money.currency import Currency
+from dated_money.money import Money
 
 date_a = "2022-07-14"
 date_b = "2022-01-07"

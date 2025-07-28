@@ -17,7 +17,7 @@ When you receive $1000 USD:
 - You want to track it as "$1000 USD received on 2024-01-15"
 - Conversion to EUR happens when YOU choose (maybe months later)
 
-### Currencies WITHOUT Bank Accounts  
+### Currencies WITHOUT Bank Accounts
 When you receive ฿5000 THB (Thai Baht):
 - You can't hold THB (no account)
 - Your payment processor converts it to EUR immediately
@@ -46,7 +46,7 @@ sales.append({
 
 # January 20: Sale in USD (you have USD account - no immediate conversion)
 sales.append({
-    'date': '2024-01-20', 
+    'date': '2024-01-20',
     'description': 'Enterprise license - US',
     'amount': CompanyMoney(1000, 'USD', on_date='2024-01-20'),
     'converted_immediately': False
@@ -95,7 +95,7 @@ Output:
   (Converted immediately - this is what you actually received)
 
 2024-01-20: Enterprise license - US
-  Original: $1000.00  
+  Original: $1000.00
   In EUR: €921.38
   (Still held in Currency.USD account)
 
@@ -121,7 +121,7 @@ held_funds = [s for s in sales if not s['converted_immediately']]
 for sale in held_funds:
     original = sale['amount']
     current = CurrentMoney(original.amount(), original.currency)
-    
+
     print(f"{original.currency} {original.amount()}")
     print(f"  Value on {sale['date']}: €{original.amount(Currency.EUR):.2f}")
     print(f"  Value today: €{current.amount():.2f}")
@@ -170,7 +170,7 @@ print(f"Current value of held funds: €{current_value.amount():.2f}")
    ```python
    # What you actually received in EUR
    realized_eur = sum(s['amount'] for s in sales if s['converted_immediately'])
-   
+
    # What's still in foreign accounts
    unrealized = [s['amount'] for s in sales if not s['converted_immediately']]
    ```
