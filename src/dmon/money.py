@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from datetime import date
-from typing import Tuple, Union, Optional, ClassVar, Any, Type
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, ClassVar, Optional, Tuple, Type, Union
 
 from dmon.currency import Currency, CurrencySymbols, to_currency_enum
-from dmon.rates import get_rates, parse_optional_date, format_date
-
+from dmon.rates import format_date, get_rates, parse_optional_date
 
 Numeric = Union[int, float, Decimal]
 
@@ -23,8 +19,9 @@ class BaseMoney:
     base_currency: ClassVar[Currency] = Currency.USD
     output_currency: Optional[Currency] = None
 
-    # Precision for checking equality, applied to the cents. A 0 is
-    # equivalent to rounding cents.
+    # Precision for checking equality, applied to the cents.
+    # 0 means exact cent matching, higher values allow for more tolerance.
+    # For example, precision=2 means 0.01 cent tolerance.
     precision: ClassVar[int] = 0
 
     def __init__(
@@ -96,10 +93,10 @@ class BaseMoney:
             raise RuntimeError(f"Could not find rates for {rates_date}")
 
         if rates[currency] is None:
-            raise RuntimeError("Could not find conversion rate for ", currency)
+            raise RuntimeError(f"Could not find conversion rate for {currency}")
 
         if rates[self.currency] is None:
-            raise RuntimeError("Could not find conversion rate for ", self.currency)
+            raise RuntimeError(f"Could not find conversion rate for {self.currency}")
 
         return self._cents * Decimal(str(rates[currency])) / Decimal(str(rates[self.currency]))
 
@@ -110,13 +107,36 @@ class BaseMoney:
         return (Decimal(round(cents)) if rounding else cents) / Decimal("100")
 
     def to(self, currency: Union[str, Currency]) -> "BaseMoney":
+        """Convert this money amount to a different currency.
+
+        Args:
+            currency: Target currency as string or Currency enum
+
+        Returns:
+            New BaseMoney instance in the target currency
+        """
         return self.__class__(cents_str(self.cents(currency)), currency, on_date=self.on_date)
 
     def on(self, on_date: str) -> "BaseMoney":
+        """Create a new money instance with a different date.
+
+        Args:
+            on_date: Date string in yyyy-mm-dd format
+
+        Returns:
+            New BaseMoney instance with the specified date
+        """
         return self.__class__(cents_str(self._cents), self.currency, on_date=on_date)
 
     def normalized_amounts(self, o: "BaseMoney") -> Tuple[Decimal, Decimal]:
-        """Returns the two amounts in the base currency."""
+        """Convert both money amounts to the base currency for comparison.
+
+        Args:
+            o: Other BaseMoney instance to normalize
+
+        Returns:
+            Tuple of (self_cents, other_cents) in base currency
+        """
         return (self.cents(self.base_currency), o.cents(self.base_currency))
 
     def __neg__(self) -> "BaseMoney":
@@ -196,15 +216,12 @@ class BaseMoney:
 
     def __str__(self) -> str:
         currency = self.output_currency or self.currency
-        return "%s%.2f" % (CurrencySymbols[currency], self.amount(currency, rounding=True))
+        return f"{CurrencySymbols[currency]}{self.amount(currency, rounding=True):.2f}"
 
     def __repr__(self) -> str:
         currency = self.output_currency or self.currency
-        return "%s%s %.2f" % (
-            (format_date(self.on_date) + " ") if self.on_date is not None else "",
-            self.currency.value.upper(),
-            self.amount(currency, rounding=True),
-        )
+        date_prefix = f"{format_date(self.on_date)} " if self.on_date is not None else ""
+        return f"{date_prefix}{self.currency.value.upper()} {self.amount(currency, rounding=True):.2f}"
 
     def __conform__(self, protocol: Any) -> Optional[str]:
         """Enables writing to an sqlite database

@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-
-from typing import Union
 from enum import Enum
+from typing import Dict, Union
 
 
 class Currency(Enum):
@@ -167,7 +165,7 @@ class Currency(Enum):
     ZMW = "zmw"
 
 
-CurrencySymbols = {
+CurrencySymbols: Dict[Currency, str] = {
     Currency.AED: "د.إ",
     Currency.AFN: "؋",
     Currency.ALL: "Lek ",
@@ -331,7 +329,7 @@ CurrencySymbols = {
 }
 
 
-ReverseCurrencySymbols = {v: k for k, v in CurrencySymbols.items()}
+ReverseCurrencySymbols: Dict[str, Currency] = {v: k for k, v in CurrencySymbols.items()}
 
 # These can be used in several currencies, choose one:
 ReverseCurrencySymbols["C$"] = Currency.CAD

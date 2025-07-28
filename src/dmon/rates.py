@@ -1,23 +1,26 @@
-# -*- coding: utf-8 -*-
-
-import os
 import json
+import os
+import sqlite3
+import subprocess
 import threading
 import time
-import subprocess
-import sqlite3
-import requests
-from decimal import Decimal
 from contextlib import contextmanager
-from datetime import datetime, date
+from datetime import date, datetime
+from decimal import Decimal
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar, Dict, Optional, Tuple, Union
+
+import requests
 from dateutil.relativedelta import relativedelta
-from typing import Optional, Union, Dict, ClassVar, Tuple
 from dotenv import load_dotenv
 
-load_dotenv()
-
-
 from dmon.currency import Currency
+from dmon.logging import logger
+
+if TYPE_CHECKING:
+    from supabase import Client
+
+load_dotenv()
 
 
 def parse_date(dt: Union[date, str]) -> date:
@@ -78,9 +81,9 @@ CONNECTION_POOL = None
 def get_db_connection(database_dir: Optional[str] = None):
     global CONNECTION_POOL
     if CONNECTION_POOL is None:
-        ddir = database_dir or os.environ.get("DMON_RATES_CACHE", ".")
-        os.makedirs(ddir, exist_ok=True)
-        CONNECTION_POOL = ConnectionPool(os.path.join(ddir, "exchange-rates.db"))
+        ddir = Path(database_dir or os.environ.get("DMON_RATES_CACHE", "."))
+        ddir.mkdir(parents=True, exist_ok=True)
+        CONNECTION_POOL = ConnectionPool(str(ddir / "exchange-rates.db"))
 
     connection = CONNECTION_POOL.get_connection()
     try:
@@ -112,7 +115,7 @@ def cache_day_rates(dt: Union[date, str], rates: Dict[str, float]):
             if currency.lower() in valid_currencies
         }
 
-        columns = ", ".join(f'"{currency.lower()}"' for currency in filtered_rates.keys())
+        columns = ", ".join(f'"{currency.lower()}"' for currency in filtered_rates)
         placeholders = ", ".join("?" * len(filtered_rates))
         values = tuple(filtered_rates.values())
 
@@ -130,14 +133,14 @@ def fill_cache_db():
     if repo_dir is None:
         raise ValueError("DMON_RATES_REPO environment variable is not set")
 
-    for filename in os.listdir(os.path.join(repo_dir, "money")):
-        if filename.endswith("-rates.json"):
-            file_path = os.path.join(repo_dir, "money", filename)
-            with open(file_path, "r") as file:
-                data = json.load(file)
-                rates = data["conversion_rates"]
-                date_str = filename.split("-rates.json")[0]
-                cache_day_rates(date_str, rates)
+    repo_path = Path(repo_dir)
+    money_dir = repo_path / "money"
+    for file_path in money_dir.glob("*-rates.json"):
+        with open(file_path) as file:
+            data = json.load(file)
+            rates = data["conversion_rates"]
+            date_str = file_path.stem.replace("-rates", "")
+            cache_day_rates(date_str, rates)
 
 
 def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, float]]:
@@ -171,12 +174,17 @@ def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, flo
 
     """
     repo_dir = os.environ.get("DMON_RATES_REPO", None)
-    if repo_dir is None or not os.path.exists(repo_dir):
+    if repo_dir is None:
         return None
-    print(f"Attempting to get rates from repo for {on_date}")
 
-    rates_file_path = os.path.join(repo_dir, "money", format_date(on_date) + "-rates.json")
-    if not os.path.exists(rates_file_path):
+    repo_path = Path(repo_dir)
+    if not repo_path.exists():
+        return None
+
+    logger.debug(f"Attempting to get rates from repo for {on_date}")
+    rates_file_path = repo_path / "money" / f"{format_date(on_date)}-rates.json"
+
+    if not rates_file_path.exists():
         # Attempt to update the local repository
         try:
             subprocess.run(
@@ -188,8 +196,8 @@ def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, flo
         except subprocess.CalledProcessError:
             return None
 
-    if os.path.exists(rates_file_path):
-        with open(rates_file_path, "r", encoding="utf-8") as file:
+    if rates_file_path.exists():
+        with open(rates_file_path, encoding="utf-8") as file:
             rates = json.load(file)
             return rates["conversion_rates"]
 
@@ -243,7 +251,7 @@ def fetch_rates_from_exchangerate_api(on_date: Union[date, str]) -> Optional[Dic
         return rates.get("conversion_rates")
     else:
         # Log or handle unsuccessful request appropriately
-        print(f"Failed to fetch rates for {on_date}: HTTP {response.status_code}")
+        logger.warning(f"Failed to fetch rates for {on_date}: HTTP {response.status_code}")
         return None
 
 
@@ -279,7 +287,7 @@ def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[Dict[str,
         return None
 
     try:
-        print("Trying to get rates from supabase")
+        logger.debug("Trying to get rates from supabase")
         response = client.rpc(
             "get_rates_for_date", {"target_date": format_date(on_date)}
         ).execute()
@@ -287,7 +295,7 @@ def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[Dict[str,
         if response.data:
             return response.data["conversion_rates"]
     except Exception as e:
-        print(f"Error fetching rates from Supabase: {e}")
+        logger.error(f"Error fetching rates from Supabase: {e}")
 
     return None
 
@@ -333,36 +341,44 @@ def find_rates_for_date(
 def get_rates(
     on_date: Union[date, str], *currencies: Currency
 ) -> Optional[Dict[Currency, Optional[Decimal]]]:
-    """Retrieves the exchange rates for the specified currencies on a
-    given date. If rates are not available for the specified date,
-    it will attempt to find rates from the most recent previous date
-    (up to 10 days back).
+    """Retrieves the exchange rates for the specified currencies on a given date.
 
-    This function first attempts to fetch the rates from the local
-    database. If the rates are not found, it tries these sources in order:
-    1. Local git repository (if DMON_RATES_REPO is set)
-    2. Supabase (if SUPABASE_URL and SUPABASE_KEY are set)
-    3. exchangerate-api (if DMON_EXCHANGERATE_API_KEY is set)
+    **Rate Fallback Behavior:**
+    If rates are not available for the specified date, the function will
+    automatically search for rates from previous dates, going back up to 10 days.
+    This ensures that currency conversions can still be performed even when
+    rates for the exact date are missing (e.g., weekends, holidays).
+    When fallback rates are used, a log message will indicate which date's
+    rates were actually used.
 
-    Once fetched from any source, the rates are cached in the local
-    database for future use.
+    **Data Sources (tried in order):**
+    1. Local SQLite cache
+    2. Local git repository (if DMON_RATES_REPO is set)
+    3. Supabase (if SUPABASE_URL and SUPABASE_KEY are set)
+    4. exchangerate-api.com (if DMON_EXCHANGERATE_API_KEY is set)
 
-    Arguments:
-    - on_date: The date for which to fetch the exchange rates, either
-               as a date or as a string in the 'YYYY-MM-DD' format.
-    - [currencies]: Variable length argument list of Currency enum
-                    members for which to fetch the exchange rates.
+    Once fetched from any source, rates are cached locally for future use.
 
-    Returns a dictionary mapping each requested currency to its
-    exchange rate against the base currency for the specified
-    date. The rate is `None` if it could not be fetched.
+    Args:
+        on_date: The date for which to fetch exchange rates (date object or 'YYYY-MM-DD' string)
+        *currencies: Variable length argument list of Currency enum members
+
+    Returns:
+        Dictionary mapping each requested currency to its exchange rate as Decimal.
+        Returns None if no rates could be fetched from any source.
+        Individual currency rates may be None if not available.
 
     Environment variables:
-    - DMON_RATES_CACHE: directory where the cache file (sqlite database) is stored.
-    - DMON_RATES_REPO: directory containing a git repository with the rates files.
-    - SUPABASE_URL: Supabase project URL
-    - SUPABASE_KEY: Supabase anon key
-    - DMON_EXCHANGERATE_API_KEY: API key for exchangerate-api.com
+        - DMON_RATES_CACHE: Directory for SQLite cache (default: current directory)
+        - DMON_RATES_REPO: Git repository containing rates JSON files
+        - SUPABASE_URL: Supabase project URL
+        - SUPABASE_KEY: Supabase anon key
+        - DMON_EXCHANGERATE_API_KEY: API key for exchangerate-api.com
+
+    Example:
+        >>> # This would return rates if data is available:
+        >>> # rates = get_rates("2024-01-15", Currency.USD, Currency.EUR)
+        >>> # print(rates[Currency.EUR])  # EUR rate on 2024-01-15
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -375,7 +391,8 @@ def get_rates(
                 f"SELECT {placeholders} FROM rates WHERE date = ?", (format_date(on_date),)
             )
             row = cursor.fetchone()
-        except:
+        except sqlite3.Error as e:
+            logger.warning(f"Database error when fetching rates: {e}")
             row = None
 
         out = None
@@ -391,7 +408,7 @@ def get_rates(
                     cache_day_rates(found_date, rates)
 
                 if found_date != parse_date(on_date):
-                    print(f"Using rates from {found_date} for {on_date}")
+                    logger.info(f"Using rates from {found_date} for {on_date}")
 
                 out = {currency: rates.get(currency.value.upper()) for currency in currencies}
 
@@ -426,7 +443,7 @@ def fetch_period_rates(from_date: Union[date, str], to_date: Union[date, str]) -
                string in yyyy-mm-dd format.
 
     """
-    print(f"Downloading rates from {from_date} to {to_date}")
+    logger.info(f"Downloading rates from {from_date} to {to_date}")
     dt = parse_date(from_date)
     to_dt = parse_date(to_date)
     while dt <= to_dt:
@@ -466,14 +483,14 @@ def main():
     args = parser.parse_args()
 
     if args.create_table:
-        print("Updating currency conversion cache database...")
+        logger.info("Updating currency conversion cache database...")
         maybe_create_cache_table()
-        print("Cache database updated successfully.")
+        logger.info("Cache database updated successfully.")
 
     if args.update_cache:
-        print("Updating currency conversion cache database...")
+        logger.info("Updating currency conversion cache database...")
         fill_cache_db()
-        print("Cache database updated successfully.")
+        logger.info("Cache database updated successfully.")
 
     if args.fetch_rates:
         from_dt, to_dt = args.fetch_rates.split(":")

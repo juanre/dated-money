@@ -17,7 +17,13 @@ It downloads and saves today's conversion rates from https://www.exchangerate-ap
 
 ## Installation
 
-You can install Dated Money using pip:
+You can install Dated Money using uv:
+
+```
+uv add dated-money
+```
+
+or pip:
 
 ```
 pip install dated-money
