@@ -1,6 +1,6 @@
 [project]
 name = "dated-money"
-version = "1.0.2"
+version = "2.0.0"
 description = "Compute with dated monetary values."
 readme = "README.md"
 authors = [
@@ -16,19 +16,18 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/juanre/dmon"
-Repository = "https://github.com/juanre/dmon"
+Homepage = "https://github.com/juanre/dated-money"
+Repository = "https://github.com/juanre/dated-money"
 
 [project.scripts]
-dmon = "dmon:main"
-dmon-rates = "dmon.rates:main"
+dmon-rates = "dated_money.rates:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dmon"]
+packages = ["src/dated_money"]
 
 
 [tool.pytest.ini_options]

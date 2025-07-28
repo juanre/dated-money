@@ -1,11 +1,18 @@
 # Changelog
 
-All notable changes to the dated-money (dmon) project will be documented in this file.
+All notable changes to the dated-money project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2024-01-28
+
+### ⚠️ BREAKING CHANGES
+- **Module renamed from `dmon` to `dated_money`**
+  - All imports must be updated: `from dmon import ...` → `from dated_money import ...`
+  - The Python module name is now self-documenting and clearer
+  - CLI command `dmon-rates` remains unchanged
+  - Removed the `dmon` CLI command (it served no useful purpose)
 
 ### Added
 - Comprehensive logging infrastructure with configurable logger
@@ -29,9 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Converted string formatting to f-strings throughout
 - Improved error messages with consistent formatting
 - Cache database now uses platform-specific standard locations by default:
-  - macOS: `~/Library/Caches/dmon/exchange-rates.db`
-  - Linux: `~/.cache/dmon/exchange-rates.db`
-  - Windows: `%LOCALAPPDATA%\dmon\cache\exchange-rates.db`
+  - macOS: `~/Library/Caches/dated_money/exchange-rates.db`
+  - Linux: `~/.cache/dated_money/exchange-rates.db`
+  - Windows: `%LOCALAPPDATA%\dated_money\cache\exchange-rates.db`
 - Fixed bare `except:` clause to catch specific `sqlite3.Error`
 - Enhanced precision handling in currency conversion tests
 - Modernized Python version support (3.9+)
@@ -47,8 +54,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redundant type imports that are deprecated in modern Python
 - Pre-populated exchange rate database from distribution
 
-### Security
-- No longer distributing third-party exchange rate data with the package
+## Migration Guide from 1.x to 2.0
+
+### Update your imports:
+```python
+# Old (1.x)
+from dmon import Money, Currency
+
+# New (2.0)
+from dated_money import Money, Currency
+```
+
+### Update your requirements:
+```
+# Old
+dmon>=1.0
+
+# New  
+dated-money>=2.0
+```
+
+### CLI changes:
+- The `dmon-rates` command remains the same
+- The `dmon` command has been removed (it only printed help text)
 
 ## [1.0.2] - Previous Release
 

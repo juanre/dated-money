@@ -47,8 +47,8 @@ pip install dated-money
 For development, clone the repository and install with development dependencies:
 
 ```bash
-git clone https://github.com/juanre/dmon
-cd dmon
+git clone https://github.com/juanre/dated-money
+cd dated-money
 uv sync
 ```
 
@@ -59,7 +59,7 @@ uv sync
 Imagine you run a European company receiving payments in multiple currencies:
 
 ```python
-from dmon import Money, Currency
+from dated_money import Money, Currency
 
 # Your company's base currency
 CompanyMoney = Money(Currency.EUR)
@@ -84,7 +84,7 @@ print(f"Total revenue: {total}")
 
 ```python
 from decimal import Decimal as Dec
-from dmon import Money, Currency
+from dated_money import Money, Currency
 
 # Create a Money class with EUR as the base currency and conversion rates from a specific date
 date_a = '2022-07-14'
@@ -211,9 +211,9 @@ Rate files should be named `yyyy-mm-dd-rates.json` and contain:
 ### Cache Database Location
 
 By default, the cache database is stored in platform-specific locations:
-- **macOS**: `~/Library/Caches/dmon/exchange-rates.db`
-- **Linux**: `~/.cache/dmon/exchange-rates.db` (or `$XDG_CACHE_HOME/dmon/exchange-rates.db`)
-- **Windows**: `%LOCALAPPDATA%\dmon\cache\exchange-rates.db`
+- **macOS**: `~/Library/Caches/dated_money/exchange-rates.db`
+- **Linux**: `~/.cache/dated_money/exchange-rates.db` (or `$XDG_CACHE_HOME/dated_money/exchange-rates.db`)
+- **Windows**: `%LOCALAPPDATA%\dated_money\cache\exchange-rates.db`
 
 You can override this by setting the `DMON_RATES_CACHE` environment variable to your preferred directory.
 
@@ -261,9 +261,15 @@ uv run ruff check src/ test/
 uv run mypy src/
 ```
 
+## Additional Resources
+
+- [Real-World Use Case](docs/real_world_use_case.md) - Detailed example: multi-currency business with mixed bank accounts
+- [Currency Operations Explained](docs/currency_operations_explained.md) - Technical guide on how operations work
+- [Transaction Analysis Example](examples/) - Working code showing the impact of historical exchange rates
+
 ## Contributing
 
-Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/juanre/dmon).
+Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/juanre/dated-money).
 
 ## License
 

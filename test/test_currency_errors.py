@@ -1,6 +1,6 @@
 """Test improved error handling for currency operations."""
 import pytest
-from dmon.currency import to_currency_enum, Currency
+from dated_money.currency import to_currency_enum, Currency
 
 
 def test_invalid_currency_code():

@@ -2,8 +2,8 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, ClassVar, Optional, Tuple, Type, Union
 
-from dmon.currency import Currency, CurrencySymbols, to_currency_enum
-from dmon.rates import format_date, get_rates, parse_optional_date
+from dated_money.currency import Currency, CurrencySymbols, to_currency_enum
+from dated_money.rates import format_date, get_rates, parse_optional_date
 
 Numeric = Union[int, float, Decimal]
 

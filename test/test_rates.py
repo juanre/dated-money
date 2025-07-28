@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from unittest.mock import patch, MagicMock, mock_open
 
-from dmon.rates import (
+from dated_money.rates import (
     parse_date,
     parse_optional_date,
     format_date,
@@ -20,7 +20,7 @@ from dmon.rates import (
     find_rates_for_date,
     ConnectionPool,
 )
-from dmon.currency import Currency
+from dated_money.currency import Currency
 
 
 class TestDateParsing:
@@ -117,7 +117,7 @@ class TestCacheOperations:
 class TestRateRetrieval:
     """Test rate retrieval from various sources."""
     
-    @patch('dmon.rates.requests.get')
+    @patch('dated_money.rates.requests.get')
     def test_fetch_rates_from_exchangerate_api_success(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -133,7 +133,7 @@ class TestRateRetrieval:
             rates = fetch_rates_from_exchangerate_api("2024-01-15")
             assert rates == {"USD": 1.0, "EUR": 0.85}
     
-    @patch('dmon.rates.requests.get')
+    @patch('dated_money.rates.requests.get')
     def test_fetch_rates_from_exchangerate_api_failure(self, mock_get):
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -174,7 +174,7 @@ class TestRateRetrieval:
             rates = get_day_rates_from_repo("2024-01-15")
             assert rates is None
     
-    @patch('dmon.rates.get_supabase_client')
+    @patch('dated_money.rates.get_supabase_client')
     def test_get_day_rates_from_supabase_success(self, mock_client):
         mock_response = MagicMock()
         mock_response.data = {
@@ -189,7 +189,7 @@ class TestRateRetrieval:
         rates = get_day_rates_from_supabase("2024-01-15")
         assert rates == {"USD": 1.0, "EUR": 0.85}
     
-    @patch('dmon.rates.get_supabase_client')
+    @patch('dated_money.rates.get_supabase_client')
     def test_get_day_rates_from_supabase_error(self, mock_client):
         mock_client.return_value.rpc.side_effect = Exception("Connection error")
         
@@ -229,8 +229,8 @@ class TestRateFallback:
             
             # Ensure only repo source is used
             with patch.dict('os.environ', {'DMON_RATES_REPO': tmpdir}, clear=True):
-                with patch('dmon.rates.get_supabase_client', return_value=None):
-                    with patch('dmon.rates.fetch_rates_from_exchangerate_api', return_value=None):
+                with patch('dated_money.rates.get_supabase_client', return_value=None):
+                    with patch('dated_money.rates.fetch_rates_from_exchangerate_api', return_value=None):
                         rates, found_date = find_rates_for_date("2024-01-15")
                         assert rates == {"USD": 1.0}
                         assert found_date == date(2024, 1, 13)
@@ -239,9 +239,9 @@ class TestRateFallback:
         """Test that fallback stops after 10 days."""
         # Clear all environment variables and mock all external sources
         with patch.dict('os.environ', {}, clear=True):
-            with patch('dmon.rates.get_supabase_client', return_value=None):
-                with patch('dmon.rates.get_day_rates_from_repo', return_value=None):
-                    with patch('dmon.rates.fetch_rates_from_exchangerate_api', return_value=None):
+            with patch('dated_money.rates.get_supabase_client', return_value=None):
+                with patch('dated_money.rates.get_day_rates_from_repo', return_value=None):
+                    with patch('dated_money.rates.fetch_rates_from_exchangerate_api', return_value=None):
                         rates, found_date = find_rates_for_date("2024-01-15")
                         assert rates is None
                         assert found_date is None
@@ -252,8 +252,8 @@ class TestGetRates:
     
     def setup_method(self):
         """Reset connection pool before each test."""
-        import dmon.rates
-        dmon.rates.CONNECTION_POOL = None
+        import dated_money.rates
+        dated_money.rates.CONNECTION_POOL = None
     
     def test_get_rates_from_cache(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -277,9 +277,9 @@ class TestGetRates:
     def test_get_rates_no_sources(self):
         """Test when no rate sources are available."""
         # Just ensure find_rates_for_date is mocked to return None
-        with patch('dmon.rates.find_rates_for_date', return_value=(None, None)):
+        with patch('dated_money.rates.find_rates_for_date', return_value=(None, None)):
             # Also mock the DB to have no cached data
-            with patch('dmon.rates.get_db_connection') as mock_conn:
+            with patch('dated_money.rates.get_db_connection') as mock_conn:
                 mock_cursor = MagicMock()
                 mock_cursor.fetchone.return_value = None
                 mock_conn.return_value.__enter__.return_value.cursor.return_value = mock_cursor
@@ -298,7 +298,7 @@ class TestErrorCases:
     def test_cache_database_error(self):
         """Test handling of database errors."""
         # Mock a database error during execute
-        with patch('dmon.rates.get_db_connection') as mock_conn:
+        with patch('dated_money.rates.get_db_connection') as mock_conn:
             mock_cursor = MagicMock()
             mock_cursor.execute.side_effect = sqlite3.OperationalError("Database error")
             mock_conn.return_value.__enter__.return_value.cursor.return_value = mock_cursor

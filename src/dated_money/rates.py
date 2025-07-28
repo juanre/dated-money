@@ -15,8 +15,8 @@ import requests
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
-from dmon.currency import Currency
-from dmon.logging import logger
+from dated_money.currency import Currency
+from dated_money.logging import logger
 
 if TYPE_CHECKING:
     from supabase import Client
@@ -93,15 +93,15 @@ def get_db_connection(database_dir: Optional[str] = None):
         else:
             # Use standard cache directory based on platform
             if sys.platform == "darwin":
-                # macOS: ~/Library/Caches/dmon
-                ddir = Path.home() / "Library" / "Caches" / "dmon"
+                # macOS: ~/Library/Caches/dated_money
+                ddir = Path.home() / "Library" / "Caches" / "dated_money"
             elif sys.platform == "win32":
-                # Windows: %LOCALAPPDATA%\dmon\cache
-                ddir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "dmon" / "cache"
+                # Windows: %LOCALAPPDATA%\dated_money\cache
+                ddir = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "dated_money" / "cache"
             else:
-                # Linux/Unix: ~/.cache/dmon
+                # Linux/Unix: ~/.cache/dated_money
                 cache_home = os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")
-                ddir = Path(cache_home) / "dmon"
+                ddir = Path(cache_home) / "dated_money"
         
         ddir.mkdir(parents=True, exist_ok=True)
         CONNECTION_POOL = ConnectionPool(str(ddir / "exchange-rates.db"))

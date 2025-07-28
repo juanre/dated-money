@@ -27,7 +27,7 @@ When you receive ฿5000 THB (Thai Baht):
 ## How Dated Money Helps
 
 ```python
-from dmon import Money, Currency
+from dated_money import Money, Currency
 from datetime import date
 
 # Your company's base currency

@@ -18,7 +18,7 @@ from pathlib import Path
 # Set up test database for this example
 os.environ["DMON_RATES_CACHE"] = str(Path(__file__).parent.parent / "test" / "res")
 
-from dmon import Money, Currency
+from dated_money import Money, Currency
 
 
 def read_transactions(csv_file):

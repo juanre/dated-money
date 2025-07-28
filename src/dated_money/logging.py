@@ -4,11 +4,11 @@ from typing import Optional
 
 
 def setup_logger(
-    name: str = "dmon",
+    name: str = "dated_money",
     level: int = logging.INFO,
     format_string: Optional[str] = None,
 ) -> logging.Logger:
-    """Set up a logger for the dmon package.
+    """Set up a logger for the dated_money package.
 
     Args:
         name: Logger name

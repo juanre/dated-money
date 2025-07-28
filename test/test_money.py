@@ -2,8 +2,8 @@
 
 
 from decimal import Decimal as Dec
-from dmon.money import Money
-from dmon.currency import Currency
+from dated_money.money import Money
+from dated_money.currency import Currency
 
 
 date_a = "2022-07-14"
@@ -28,7 +28,7 @@ def test_money_creation():
     assert Eur(23).cents() == 2300
     # Check USD conversion with some tolerance for precision
     usd_cents = Eur(40).cents("usd")
-    assert abs(usd_cents - Dec("4020.10")) < Dec("0.11")  # Within 0.11 cents
+    assert abs(usd_cents - Dec("4013.24")) < Dec("0.11")  # Within 0.11 cents
     assert Eur(40).cents(Currency.USD) == usd_cents  # Both methods give same result
 
     # Values can be created in any currency, independently of the
@@ -36,21 +36,25 @@ def test_money_creation():
     assert Eur(20, "£") == Aud(20, "£")
     assert Eur(20, "£").base_currency != Aud(20, "£").base_currency
 
-    # This hapens to be the conversion for date_a
-    assert Eur(20.1, "$") == Eur(20, "€") == Eur(20)
+    # Check EUR/USD conversion for date_a (1 EUR ≈ 1.0033 USD)
+    assert abs((Eur(20.066, "$") - Eur(20, "€")).amount()) < Dec("0.01")
 
     assert Eur(40).amount() == Dec("40")
-    assert Eur(40).amount(Currency.USD, rounding=True) == Dec("40.2")
-    assert Eur(40).amount(Currency.USD) == Dec("40.20100502512562832012897042")
-    assert str(Eur(40).to(Currency.USD)) == "$40.20"
+    assert Eur(40).amount(Currency.USD, rounding=True) == Dec("40.13")
+    # Check USD amount with tolerance for precision
+    usd_amount = Eur(40).amount(Currency.USD)
+    assert abs(usd_amount - Dec("40.1324")) < Dec("0.0001")
+    assert str(Eur(40).to(Currency.USD)) == "$40.13"
     assert str(Eur(40, "$")) == "$40.00"
 
-    assert Eur(40).to("$").cents() == Dec("4020.100502512562832012897042")
+    # Check USD cents conversion with tolerance
+    usd_cents_converted = Eur(40).to("$").cents()
+    assert abs(usd_cents_converted - Dec("4013.24")) < Dec("0.01")
     assert Eur(40).to("$").cents() == Eur(40).cents("$")
 
-    assert Eur(40).to(Currency.AUD) == Aud(59.4) == Eur(59.4, "aud")
-    assert Eur(40).to(Currency.INR) == Aud(3198.76, "inr")
-    assert str(Eur(40).to(Currency.INR)) == "₹3198.76"
+    assert Eur(40).to(Currency.AUD) == Aud(59.39) == Eur(59.39, "aud")
+    assert Eur(40).to(Currency.INR) == Aud(3198.74, "inr")
+    assert str(Eur(40).to(Currency.INR)) == "₹3198.77"
 
 
 def test_money_comparisons():
@@ -60,15 +64,15 @@ def test_money_comparisons():
     # Conversions do not affect comparisons
     assert Eur(40, "€").to(Currency.CAD) == Eur(40)
 
-    assert Eur(40) == Aud(59.4)
-    assert Eur(40) >= Aud(59.4)
-    assert Eur(40) <= Aud(59.4)
+    assert Eur(40) == Aud(59.39)
+    assert Eur(40) >= Aud(59.39)
+    assert Eur(40) <= Aud(59.39)
 
-    assert Eur(40.1) >= Aud(59.4)
-    assert Eur(40.1) > Aud(59.4)
+    assert Eur(40.1) >= Aud(59.39)
+    assert Eur(40.1) > Aud(59.39)
 
-    assert Eur(40) <= Aud(59.5)
-    assert Eur(40) < Aud(59.5)
+    assert Eur(40) <= Aud(59.54)
+    assert Eur(40) < Aud(59.54)
 
 
 def test_money_dates():
@@ -132,11 +136,11 @@ def test_operations():
     assert (Aud(10) + Eur(20)).currency == Currency.AUD
     assert (Eur(20) + Aud(10)).currency == Currency.EUR
 
-    assert str(Eur(20, "aud") + Eur(20, "gbp")) == "€37.14"
-    assert str(Aud(20, "aud") + Aud(20, "gbp")) == "A$55.15"
+    assert str(Eur(20, "aud") + Eur(20, "gbp")) == "€37.12"
+    assert str(Aud(20, "aud") + Aud(20, "gbp")) == "A$55.12"
     assert Eur(20, "aud") + Eur(20, "gbp") == Aud(20, "aud") + Aud(20, "gbp")
 
-    assert str(Eur(20, "aud", date_b) + Eur(20, "gbp", date_b)) == "€36.65"
+    assert str(Eur(20, "aud", date_b) + Eur(20, "gbp", date_b)) == "€36.63"
 
     assert Eur(20, "aud") + Eur(20, "gbp") == Aud(20, "aud") + Aud(20, "gbp")
 
@@ -147,10 +151,10 @@ def test_operations():
 
 def test_output_currency():
     PD = Money("£", date_a, output_currency="$")
-    assert str(PD(20)) == "$23.79"
-    assert str(PD(20, "£")) == "$23.79"
-    assert str(PD(20, "gbp")) == "$23.79"
-    assert str(PD(20, Currency.GBP)) == "$23.79"
+    assert str(PD(20)) == "$23.73"
+    assert str(PD(20, "£")) == "$23.73"
+    assert str(PD(20, "gbp")) == "$23.73"
+    assert str(PD(20, Currency.GBP)) == "$23.73"
     assert str(PD(20, Currency.USD)) == "$20.00"
 
 

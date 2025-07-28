@@ -3,8 +3,8 @@ from decimal import Decimal, InvalidOperation
 from datetime import date
 from unittest.mock import patch
 
-from dmon.money import Money, BaseMoney, cents_str
-from dmon.currency import Currency
+from dated_money.money import Money, BaseMoney, cents_str
+from dated_money.currency import Currency
 
 
 class TestMoneyErrorCases:
@@ -22,7 +22,7 @@ class TestMoneyErrorCases:
         Eur = Money(Currency.EUR, "2024-01-15")
         
         # Need to patch at the module where it's used, not where it's defined
-        with patch('dmon.money.get_rates') as mock_get_rates:
+        with patch('dated_money.money.get_rates') as mock_get_rates:
             mock_get_rates.return_value = None
             
             money = Eur(100)
@@ -33,7 +33,7 @@ class TestMoneyErrorCases:
         """Test conversion when specific currency rate is missing."""
         Eur = Money(Currency.EUR, "2024-01-15")
         
-        with patch('dmon.money.get_rates') as mock_get_rates:
+        with patch('dated_money.money.get_rates') as mock_get_rates:
             # USD rate is missing
             mock_get_rates.return_value = {
                 Currency.EUR: Decimal("0.85"),
@@ -48,7 +48,7 @@ class TestMoneyErrorCases:
         """Test conversion when source currency rate is missing."""
         Eur = Money(Currency.EUR, "2024-01-15")
         
-        with patch('dmon.money.get_rates') as mock_get_rates:
+        with patch('dated_money.money.get_rates') as mock_get_rates:
             # EUR rate is missing
             mock_get_rates.return_value = {
                 Currency.EUR: None,
@@ -185,12 +185,12 @@ class TestMoneyEdgeCases:
         Eur = Money(Currency.EUR, "2024-01-15")
         money = Eur(100)
         
-        with patch('dmon.money.CurrencySymbols', {}):
+        with patch('dated_money.money.CurrencySymbols', {}):
             # Should raise KeyError when symbol not found
             with pytest.raises(KeyError):
                 str(money)
     
-    @patch('dmon.money.get_rates')
+    @patch('dated_money.money.get_rates')
     def test_same_currency_conversion(self, mock_get_rates):
         """Test that same-currency conversion doesn't call get_rates."""
         Eur = Money(Currency.EUR, "2024-01-15")
@@ -216,7 +216,7 @@ class TestMoneyEdgeCases:
         # Create money class that displays in USD regardless of actual currency
         EurInUsd = Money(Currency.EUR, "2024-01-15", output_currency=Currency.USD)
         
-        with patch('dmon.money.get_rates') as mock_get_rates:
+        with patch('dated_money.money.get_rates') as mock_get_rates:
             mock_get_rates.return_value = {
                 Currency.EUR: Decimal("0.92"),  # 1 EUR = 0.92 (so 1 USD = ~1.087 EUR)
                 Currency.USD: Decimal("1.0")
