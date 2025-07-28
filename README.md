@@ -19,7 +19,6 @@ For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immedia
 - **Automatic rate fallback**: If rates aren't available for a specific date, automatically searches up to 10 days back
 - **Type-safe**: Comprehensive type hints throughout the codebase
 - **Well-tested**: Extensive test suite with error case coverage
-- **Modern Python**: Uses pathlib, f-strings, and proper logging
 
 
 ## Features
@@ -67,17 +66,17 @@ CompanyMoney = Money(Currency.EUR)
 
 # Payment received in Thai Baht (immediately converted to EUR)
 thb_payment = CompanyMoney(5000, 'THB', on_date='2024-01-15')
-print(f"Received {thb_payment} = €{thb_payment.amount():.2f}")
-# Output: Received THB 5000.00 = €130.52
+print(thb_payment)  # Shows in original currency: ฿5000.00
+print(thb_payment.to('EUR'))  # Shows in EUR: €130.52
 
 # Payment received in USD (kept in USD account)
-usd_payment = CompanyMoney(1000, 'USD', on_date='2024-01-15')  
-print(f"Received {usd_payment} = €{usd_payment.amount():.2f} at historical rate")
-# Output: Received USD 1000.00 = €921.38 at historical rate
+usd_payment = CompanyMoney(1000, 'USD', on_date='2024-01-15')
+print(usd_payment)
+# Output: $1000.00
 
 # Calculate total revenue in EUR
 total = thb_payment + usd_payment
-print(f"Total revenue: €{total.amount():.2f}")
+print(f"Total revenue: {total}")
 # Output: Total revenue: €1051.90
 ```
 
