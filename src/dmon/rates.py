@@ -170,16 +170,15 @@ def get_day_rates_from_repo(on_date: Union[date, str]) -> Optional[Dict[str, flo
                        rates files in the money subdirectory.
 
     """
-    print("Attempting to get rates from repo")
     repo_dir = os.environ.get("DMON_RATES_REPO", None)
     if repo_dir is None or not os.path.exists(repo_dir):
         return None
+    print(f"Attempting to get rates from repo for {on_date}")
 
     rates_file_path = os.path.join(repo_dir, "money", format_date(on_date) + "-rates.json")
     if not os.path.exists(rates_file_path):
         # Attempt to update the local repository
         try:
-            print("Pulling exchange rates repo")
             subprocess.run(
                 ["git", "-C", repo_dir, "pull"],
                 check=True,
@@ -294,7 +293,7 @@ def get_day_rates_from_supabase(on_date: Union[date, str]) -> Optional[Dict[str,
 
 
 def find_rates_for_date(
-    on_date: Union[date, str]
+    on_date: Union[date, str],
 ) -> Tuple[Optional[Dict[str, float]], Optional[date]]:
     """Attempts to find rates for a given date, falling back to previous dates if needed.
 

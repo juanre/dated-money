@@ -1,43 +1,49 @@
-[tool.poetry]
+[project]
 name = "dated-money"
 version = "1.0.2"
 description = "Compute with dated monetary values."
 readme = "README.md"
-authors = ["Juan Reyero <juan@juanreyero.com>"]
-license = "MIT"
-packages = [
-    { include = "dmon" }
+authors = [
+    { name = "Juan Reyero", email = "juan@juanreyero.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.31.0",
+    "python-dateutil>=2.9.0.post0",
+    "supabase>=2.11.0",
+    "python-dotenv>=1.0.1"
 ]
 
-[tool.poetry.urls]
-"Homepage" = "https://github.com/juanre/dmon"
-"Repository" = "https://github.com/juanre/dmon"
+[project.urls]
+Homepage = "https://github.com/juanre/dmon"
+Repository = "https://github.com/juanre/dmon"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-requests = "^2.31.0"
-python-dateutil = "^2.9.0.post0"
-
-supabase = "^2.11.0"
-python-dotenv = "^1.0.1"
-[tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
-pytest = "^8.1.1"
-pyright = "^1.1.356"
+[project.scripts]
+dmon = "dmon:main"
+dmon-rates = "dmon.rates:main"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.scripts]
-dmon-rates = "dmon.rates:main"
+[tool.hatch.build.targets.wheel]
+packages = ["src/dmon"]
+
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --ignore=setup.py --ignore=build --ignore=doc --ignore=flymake"
-pythonpath = [
-  "."
-]
+pythonpath = ["."]
 
 [tool.black]
 line-length = 99
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "mypy>=1.17.0",
+    "pytest>=8.4.1",
+    "ruff>=0.12.5",
+]

@@ -93,7 +93,7 @@ class BaseMoney:
         rates = get_rates(rates_date, currency, self.currency)
 
         if rates is None:
-            raise RuntimeError("Could not find rates for {rates_date}")
+            raise RuntimeError(f"Could not find rates for {rates_date}")
 
         if rates[currency] is None:
             raise RuntimeError("Could not find conversion rate for ", currency)
