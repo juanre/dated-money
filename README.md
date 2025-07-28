@@ -2,8 +2,15 @@
 
 Dated Money is a Python library for manipulating monetary values with control over the date on which currency conversions take place. It represents each monetary value as an amount (stored as a Decimal in cents) and a currency, along with a corresponding date.
 
-It differs from the [money](https://pypi.org/project/money/) package in that it treats the date as a
-first-class element.
+## Why This Library Exists
+
+If you're handling multi-currency transactions, you need to know not just "how much" but also "when" - because exchange rates change daily. This is critical for:
+
+- **Businesses receiving payments in multiple currencies**: Track the exact value received on the date of transaction
+- **Accurate financial reporting**: Use historical exchange rates for past transactions
+- **Multi-currency portfolios**: Keep amounts in their original currency until you decide to convert
+
+For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immediately converted to €130, you need to record both the original amount AND the historical rate used. That's what Dated Money does.
 
 ## Key Features
 
@@ -47,6 +54,32 @@ uv sync
 ```
 
 ## Usage
+
+### Real-World Example
+
+Imagine you run a European company receiving payments in multiple currencies:
+
+```python
+from dmon import Money, Currency
+
+# Your company's base currency
+CompanyMoney = Money(Currency.EUR)
+
+# Payment received in Thai Baht (immediately converted to EUR)
+thb_payment = CompanyMoney(5000, 'THB', on_date='2024-01-15')
+print(f"Received {thb_payment} = €{thb_payment.amount():.2f}")
+# Output: Received THB 5000.00 = €130.52
+
+# Payment received in USD (kept in USD account)
+usd_payment = CompanyMoney(1000, 'USD', on_date='2024-01-15')  
+print(f"Received {usd_payment} = €{usd_payment.amount():.2f} at historical rate")
+# Output: Received USD 1000.00 = €921.38 at historical rate
+
+# Calculate total revenue in EUR
+total = thb_payment + usd_payment
+print(f"Total revenue: €{total.amount():.2f}")
+# Output: Total revenue: €1051.90
+```
 
 ### Basic Examples
 
