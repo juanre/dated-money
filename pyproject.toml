@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/juanre/dated-money"
+Homepage = "https://juanreyero.com/open/dated-money/"
 Repository = "https://github.com/juanre/dated-money"
 
 [project.scripts]
