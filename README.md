@@ -10,7 +10,6 @@ If you're handling multi-currency transactions, you need to know not just "how m
 - **Accurate financial reporting**: Use historical exchange rates for past transactions
 - **Multi-currency portfolios**: Keep amounts in their original currency until you decide to convert
 
-For example, if you receive ฿5000 (Thai Baht) on January 15th and it's immediately converted to €130, you need to record both the original amount AND the historical rate used. That's what `dated-money` does.
 
 ## Key Features
 
@@ -262,9 +261,9 @@ uv run mypy src/
 
 ## Additional Resources
 
-- [Real-World Use Case](docs/real_world_use_case.md) - Detailed example: multi-currency business with mixed bank accounts
-- [Currency Operations Explained](docs/currency_operations_explained.md) - Technical guide on how operations work
-- [Transaction Analysis Example](examples/) - Working code showing the impact of historical exchange rates
+- [Real-World Use Case](https://github.com/juanre/dated-money/blob/main/docs/real_world_use_case.md) - Detailed example: multi-currency business with mixed bank accounts
+- [Currency Operations Explained](https://github.com/juanre/dated-money/blob/main/docs/currency_operations_explained.md) - Technical guide on how operations work
+- [Transaction Analysis Example](https://github.com/juanre/dated-money/tree/main/examples) - Working code showing the impact of historical exchange rates
 
 ## Contributing
 
