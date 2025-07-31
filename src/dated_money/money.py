@@ -15,7 +15,6 @@ def cents_str(cents: Union[Numeric, str]) -> str:
 
 
 class BaseMoney:
-    base_date: ClassVar[Optional[date]] = None
     base_currency: ClassVar[Currency] = Currency.USD
 
     # Precision for checking equality, applied to the cents.
@@ -26,7 +25,7 @@ class BaseMoney:
     def __init__(
         self,
         amount: Union[str, Numeric],
-        currency: Optional[Union[str, Currency]] = None,
+        display_currency: Optional[Union[str, Currency]] = None,
         on_date: Optional[Union[date, str]] = None,
     ) -> None:
         """Initialize an instance, usually of a class derived from BaseMoney.
@@ -39,7 +38,7 @@ class BaseMoney:
                   '1234c'. In this last case the numeric value is
                   understood to be cents.
 
-        - currency: If a string is provided it should be a
+        - display_currency: If a string is provided it should be a
                     three-letter code of a currency in the Currency
                     enum, or a known currency symbol.
 
@@ -51,42 +50,29 @@ class BaseMoney:
             if isinstance(amount, str) and amount[-1] == _Cents
             else (Decimal(amount) * 100)  # '23.55'
         )
-        self.currency: Currency = to_currency_enum(currency or self.__class__.base_currency)
+        self.display_currency: Currency = to_currency_enum(
+            display_currency or self.__class__.base_currency
+        )
         self.on_date: Optional[date] = parse_optional_date(on_date)
 
     def cents(self, in_currency: Optional[Union[str, Currency]] = None) -> Decimal:
         """Converts the money amount to cents in the specified
-        currency on the given date.
+        currency on the instance's date (if provided) or today.
 
         Arguments:
 
         - in_currency: The target currency to convert to. If not
                        provided, the instance's currency is used.
 
-        - on_date: The date for which the conversion rates should be
-                   used. If not provided, the instance's original date
-                   is used. If the date is None the current date is
-                   used.
-
         Returns the amount in cents in the specified currency on the
         given date.
-
-        The function first converts the provided currency (if any) to
-        a Currency enum.  If the target currency is the same as the
-        money's original currency, the amount in cents is returned
-        directly.
-
-        The amount is then converted to cents in the target currency
-        by multiplying it with the ratio of the target currency rate
-        to the original currency rate.
-
         """
-        currency = to_currency_enum(in_currency or self.currency)
-        if currency == self.currency:
+        currency = to_currency_enum(in_currency or self.display_currency)
+        if currency == self.display_currency:
             return self._cents
 
-        rates_date = self.on_date or self.base_date or date.today()
-        rates = get_rates(rates_date, currency, self.currency)
+        rates_date = self.on_date or date.today()
+        rates = get_rates(rates_date, currency, self.display_currency)
 
         if rates is None:
             raise RuntimeError(
@@ -100,12 +86,17 @@ class BaseMoney:
                 f"Currency {currency} is not available in the exchange rates for {rates_date}"
             )
 
-        if rates[self.currency] is None:
+        if rates[self.display_currency] is None:
             raise RuntimeError(
-                f"Currency {self.currency} is not available in the exchange rates for {rates_date}"
+                f"Currency {self.display_currency} is not available "
+                f"in the exchange rates for {rates_date}"
             )
 
-        return self._cents * Decimal(str(rates[currency])) / Decimal(str(rates[self.currency]))
+        return (
+            self._cents
+            * Decimal(str(rates[currency]))
+            / Decimal(str(rates[self.display_currency]))
+        )
 
     def amount(
         self, currency: Optional[Union[str, Currency]] = None, rounding: bool = False
@@ -113,16 +104,23 @@ class BaseMoney:
         cents = self.cents(currency)
         return (Decimal(round(cents)) if rounding else cents) / Decimal("100")
 
-    def to(self, currency: Union[str, Currency]) -> "BaseMoney":
-        """Convert this money amount to a different currency.
+    def to(
+        self, currency: Union[str, Currency], on_date: Optional[Union[date, str]] = None
+    ) -> "BaseMoney":
+        """Returns a new money amount with a different display currency.
 
         Args:
             currency: Target currency as string or Currency enum
+            on_date: Optional conversion date.
 
         Returns:
             New BaseMoney instance in the target currency
         """
-        return self.__class__(cents_str(self.cents(currency)), currency, on_date=self.on_date)
+        return self.__class__(
+            cents_str(self.cents(currency)),
+            display_currency=currency,
+            on_date=parse_optional_date(on_date) or self.on_date,
+        )
 
     def on(self, on_date: str) -> "BaseMoney":
         """Create a new money instance with a different date.
@@ -133,7 +131,9 @@ class BaseMoney:
         Returns:
             New BaseMoney instance with the specified date
         """
-        return self.__class__(cents_str(self._cents), self.currency, on_date=on_date)
+        return self.__class__(
+            cents_str(self._cents), display_currency=self.display_currency, on_date=on_date
+        )
 
     def normalized_amounts(self, o: "BaseMoney") -> tuple[Decimal, Decimal]:
         """Convert both money amounts to the base currency for operating.
@@ -147,48 +147,49 @@ class BaseMoney:
         return (self.cents(self.base_currency), o.cents(self.base_currency))
 
     def __neg__(self) -> "BaseMoney":
-        return self.__class__(cents_str(-self._cents), self.currency, on_date=self.on_date)
+        return self.__class__(cents_str(-self._cents), self.display_currency, on_date=self.on_date)
 
     def __add__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         if not isinstance(o, BaseMoney):
-            o = self.__class__(o, self.currency)
+            o = self.__class__(o, self.display_currency)
 
-        v1, v2, currency = self.normalized_amounts(o)
-        return self.__class__(cents_str(v1 + v2), currency, on_date=self.base_date)
+        v1, v2 = self.normalized_amounts(o)
+        # Should have a defined criteria for which date. Youngest, oldest, first. Display currency goes with date.
+        return self.__class__(cents_str(v1 + v2), self.display_currency, on_date=self.on_date)
 
     def __radd__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         return self + o
 
     def __sub__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         if not isinstance(o, BaseMoney):
-            o = self.__class__(o, self.currency)
+            o = self.__class__(o, self.display_currency)
 
-        v1, v2, currency = self.normalized_amounts(o)
-        return self.__class__(cents_str(v1 - v2), currency, on_date=self.base_date)
+        v1, v2 = self.normalized_amounts(o)
+        return self.__class__(cents_str(v1 - v2), self.display_currency, on_date=self.on_date)
 
     def __rsub__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         return -self + o
 
     def __mul__(self, n: Numeric) -> "BaseMoney":
         return self.__class__(
-            cents_str(self._cents * Decimal(n)), self.currency, on_date=self.on_date
+            cents_str(self._cents * Decimal(n)), self.display_currency, on_date=self.on_date
         )
 
     __rmul__ = __mul__
 
     def __truediv__(self, o: Union["BaseMoney", Numeric]) -> Union["BaseMoney", Decimal]:
         if isinstance(o, BaseMoney):
-            v1, v2, _ = self.normalized_amounts(o)
+            v1, v2 = self.normalized_amounts(o)
             return v1 / v2
 
         return self.__class__(
-            cents_str(self._cents / Decimal(o)), self.currency, on_date=self.on_date
+            cents_str(self._cents / Decimal(o)), self.display_currency, on_date=self.on_date
         )
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, BaseMoney):
             return NotImplemented
-        v1, v2, _ = self.normalized_amounts(o)
+        v1, v2 = self.normalized_amounts(o)
         precision_decimal = Decimal("1").scaleb(-self.precision)
         v1_quantized = v1.quantize(precision_decimal, rounding=ROUND_HALF_UP)
         v2_quantized = v2.quantize(precision_decimal, rounding=ROUND_HALF_UP)
@@ -201,7 +202,7 @@ class BaseMoney:
         return not eq_result
 
     def __gt__(self, o: "BaseMoney") -> bool:
-        v1, v2, _ = self.normalized_amounts(o)
+        v1, v2 = self.normalized_amounts(o)
         return v1 > v2
 
     def __ge__(self, o: "BaseMoney") -> bool:
@@ -211,7 +212,7 @@ class BaseMoney:
         return eq_result or self.__gt__(o)
 
     def __lt__(self, o: "BaseMoney") -> bool:
-        v1, v2, _ = self.normalized_amounts(o)
+        v1, v2 = self.normalized_amounts(o)
         return v1 < v2
 
     def __le__(self, o: "BaseMoney") -> bool:
@@ -221,13 +222,13 @@ class BaseMoney:
         return eq_result or self.__lt__(o)
 
     def __str__(self) -> str:
-        return f"{CurrencySymbols[self.currency]}{self.amount(self.currency, rounding=True):.2f}"
+        return f"{CurrencySymbols[self.display_currency]}{self.amount(self.display_currency, rounding=True):.2f}"
 
     def __repr__(self) -> str:
         date_prefix = f"{format_date(self.on_date)} " if self.on_date is not None else ""
         return (
-            f"{date_prefix}{self.currency.value.upper()} "
-            f"{self.amount(self.currency, rounding=True):.2f}"
+            f"{date_prefix}{self.display_currency.value.upper()} "
+            f"{self.amount(self.display_currency, rounding=True):.2f}"
         )
 
     def __conform__(self, protocol: Any) -> Optional[str]:
