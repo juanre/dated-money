@@ -136,7 +136,7 @@ class BaseMoney:
         return self.__class__(cents_str(self._cents), self.currency, on_date=on_date)
 
     def normalized_amounts(self, o: "BaseMoney") -> tuple[Decimal, Decimal]:
-        """Convert both money amounts to the base currency for comparison.
+        """Convert both money amounts to the base currency for operating.
 
         Args:
             o: Other BaseMoney instance to normalize
@@ -153,8 +153,8 @@ class BaseMoney:
         if not isinstance(o, BaseMoney):
             o = self.__class__(o, self.currency)
 
-        v1, v2 = self.normalized_amounts(o)
-        return self.__class__(cents_str(v1 + v2), self.base_currency, on_date=self.base_date)
+        v1, v2, currency = self.normalized_amounts(o)
+        return self.__class__(cents_str(v1 + v2), currency, on_date=self.base_date)
 
     def __radd__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         return self + o
@@ -163,8 +163,8 @@ class BaseMoney:
         if not isinstance(o, BaseMoney):
             o = self.__class__(o, self.currency)
 
-        v1, v2 = self.normalized_amounts(o)
-        return self.__class__(cents_str(v1 - v2), self.base_currency, on_date=self.base_date)
+        v1, v2, currency = self.normalized_amounts(o)
+        return self.__class__(cents_str(v1 - v2), currency, on_date=self.base_date)
 
     def __rsub__(self, o: Union["BaseMoney", Numeric, str]) -> "BaseMoney":
         return -self + o
@@ -178,9 +178,8 @@ class BaseMoney:
 
     def __truediv__(self, o: Union["BaseMoney", Numeric]) -> Union["BaseMoney", Decimal]:
         if isinstance(o, BaseMoney):
-            v1, v2 = self.normalized_amounts(o)
+            v1, v2, _ = self.normalized_amounts(o)
             return v1 / v2
-            # return self._cents / n.to(self.currency).cents()
 
         return self.__class__(
             cents_str(self._cents / Decimal(o)), self.currency, on_date=self.on_date
@@ -189,7 +188,7 @@ class BaseMoney:
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, BaseMoney):
             return NotImplemented
-        v1, v2 = self.normalized_amounts(o)
+        v1, v2, _ = self.normalized_amounts(o)
         precision_decimal = Decimal("1").scaleb(-self.precision)
         v1_quantized = v1.quantize(precision_decimal, rounding=ROUND_HALF_UP)
         v2_quantized = v2.quantize(precision_decimal, rounding=ROUND_HALF_UP)
@@ -202,7 +201,7 @@ class BaseMoney:
         return not eq_result
 
     def __gt__(self, o: "BaseMoney") -> bool:
-        v1, v2 = self.normalized_amounts(o)
+        v1, v2, _ = self.normalized_amounts(o)
         return v1 > v2
 
     def __ge__(self, o: "BaseMoney") -> bool:
@@ -212,7 +211,7 @@ class BaseMoney:
         return eq_result or self.__gt__(o)
 
     def __lt__(self, o: "BaseMoney") -> bool:
-        v1, v2 = self.normalized_amounts(o)
+        v1, v2, _ = self.normalized_amounts(o)
         return v1 < v2
 
     def __le__(self, o: "BaseMoney") -> bool:
@@ -226,7 +225,10 @@ class BaseMoney:
 
     def __repr__(self) -> str:
         date_prefix = f"{format_date(self.on_date)} " if self.on_date is not None else ""
-        return f"{date_prefix}{self.currency.value.upper()} {self.amount(self.currency, rounding=True):.2f}"
+        return (
+            f"{date_prefix}{self.currency.value.upper()} "
+            f"{self.amount(self.currency, rounding=True):.2f}"
+        )
 
     def __conform__(self, protocol: Any) -> Optional[str]:
         """Enables writing to an sqlite database
