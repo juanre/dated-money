@@ -17,7 +17,6 @@ def cents_str(cents: Union[Numeric, str]) -> str:
 class BaseMoney:
     base_date: ClassVar[Optional[date]] = None
     base_currency: ClassVar[Currency] = Currency.USD
-    output_currency: Optional[Currency] = None
 
     # Precision for checking equality, applied to the cents.
     # 0 means exact cent matching, higher values allow for more tolerance.
@@ -223,13 +222,11 @@ class BaseMoney:
         return eq_result or self.__lt__(o)
 
     def __str__(self) -> str:
-        currency = self.output_currency or self.currency
-        return f"{CurrencySymbols[currency]}{self.amount(currency, rounding=True):.2f}"
+        return f"{CurrencySymbols[self.currency]}{self.amount(self.currency, rounding=True):.2f}"
 
     def __repr__(self) -> str:
-        currency = self.output_currency or self.currency
         date_prefix = f"{format_date(self.on_date)} " if self.on_date is not None else ""
-        return f"{date_prefix}{self.currency.value.upper()} {self.amount(currency, rounding=True):.2f}"
+        return f"{date_prefix}{self.currency.value.upper()} {self.amount(self.currency, rounding=True):.2f}"
 
     def __conform__(self, protocol: Any) -> Optional[str]:
         """Enables writing to an sqlite database

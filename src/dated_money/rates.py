@@ -16,7 +16,7 @@ from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
 from dated_money.currency import Currency
-from dated_money.logging import logger
+from dated_money.logger import logger
 
 if TYPE_CHECKING:
     from supabase import Client

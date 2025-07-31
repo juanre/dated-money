@@ -2,7 +2,7 @@
 
 import pytest
 
-from dated_money.currency import Currency, to_currency_enum
+from dated_money.currency import to_currency_enum
 
 
 def test_invalid_currency_code():

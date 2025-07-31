@@ -146,15 +146,6 @@ def test_operations():
     assert Eur(20) / Eur(10) == Dec(2)
 
 
-def test_output_currency():
-    PD = Money("£", date_a, output_currency="$")
-    assert str(PD(20)) == "$23.73"
-    assert str(PD(20, "£")) == "$23.73"
-    assert str(PD(20, "gbp")) == "$23.73"
-    assert str(PD(20, Currency.GBP)) == "$23.73"
-    assert str(PD(20, Currency.USD)) == "$20.00"
-
-
 def test_repr():
     Eur = Money(Currency.EUR, date_a)
 

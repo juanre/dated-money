@@ -1,11 +1,10 @@
-from datetime import date
 from decimal import Decimal, InvalidOperation
 from unittest.mock import patch
 
 import pytest
 
 from dated_money.currency import Currency
-from dated_money.money import BaseMoney, Money, cents_str
+from dated_money.money import Money, cents_str
 
 
 class TestMoneyErrorCases:
@@ -205,24 +204,6 @@ class TestMoneyEdgeCases:
         # Test with Currency enum
         Gbp = Money(Currency.GBP, "2024-01-15")
         assert Gbp.base_currency == Currency.GBP
-
-    def test_output_currency_override(self):
-        """Test output currency override in display."""
-        # Create money class that displays in USD regardless of actual currency
-        EurInUsd = Money(Currency.EUR, "2024-01-15", output_currency=Currency.USD)
-
-        with patch("dated_money.money.get_rates") as mock_get_rates:
-            mock_get_rates.return_value = {
-                Currency.EUR: Decimal("0.92"),  # 1 EUR = 0.92 (so 1 USD = ~1.087 EUR)
-                Currency.USD: Decimal("1.0"),
-            }
-
-            money = EurInUsd(100, Currency.EUR)  # 100 EUR
-
-            # Should display in USD (100 EUR / 0.92 = ~108.70 USD)
-            result = str(money)
-            assert "$" in result  # USD symbol
-            assert "108.70" in result or "109" in result  # Allow for rounding
 
 
 class TestCentsString:

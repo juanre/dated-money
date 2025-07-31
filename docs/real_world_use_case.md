@@ -1,178 +1,106 @@
-# Real-World Use Case: Multi-Currency Sales Tracking
+# Multi-Currency Sales Tracking
 
-## Your Business Scenario
+A European company (base currency EUR) has bank accounts in EUR and USD. They receive payments in many currencies - some they can hold, others get converted immediately by payment processors.
 
-You have a European company that:
-- Has a **base currency** of EUR (for reporting)
-- Makes sales in **multiple currencies**
-- Has **bank accounts** in some currencies (EUR, USD, GBP)
-- Receives payments in currencies where you **don't have accounts** (THB, JPY, etc.)
-
-## The Key Distinction
-
-### Currencies WITH Bank Accounts
-When you receive $1000 USD:
-- It goes into your USD bank account
-- It stays as USD until you decide to convert it
-- You want to track it as "$1000 USD received on 2024-01-15"
-- Conversion to EUR happens when YOU choose (maybe months later)
-
-### Currencies WITHOUT Bank Accounts
-When you receive ฿5000 THB (Thai Baht):
-- You can't hold THB (no account)
-- Your payment processor converts it to EUR immediately
-- You receive €130 EUR (at that day's rate)
-- You want to track: "฿5000 THB received on 2024-01-15 (€130)"
-
-## How Dated Money Helps
+## Sample Transactions
 
 ```python
 from dated_money import Money, Currency
-from datetime import date
 
-# Your company's base currency
-CompanyMoney = Money(Currency.EUR)
+# Company reports in EUR
+Eur = Money(Currency.EUR)
 
-# Track sales throughout the year
-sales = []
+# Company has a USD account
+Usd = Money(Currency.USD)
 
-# January 15: Sale in Thai Baht (no THB account - converted immediately)
-sales.append({
-    'date': '2024-01-15',
-    'description': 'Website sale - Thailand',
-    'amount': CompanyMoney(5000, 'THB', on_date='2024-01-15'),
-    'converted_immediately': True
-})
+# Track all 2024 transactions
+transactions = [
+    # EUR transactions (direct to EUR account)
+    {'date': '2024-01-10', 'amount': Eur(500, on_date='2024-01-10'),
+     'desc': 'Local client payment'},
+    {'date': '2024-06-22', 'amount': Eur(1200, on_date='2024-06-22'),
+     'desc': 'EU consulting'},
 
-# January 20: Sale in USD (you have USD account - no immediate conversion)
-sales.append({
-    'date': '2024-01-20',
-    'description': 'Enterprise license - US',
-    'amount': CompanyMoney(1000, 'USD', on_date='2024-01-20'),
-    'converted_immediately': False
-})
+    # USD transactions (held in USD account)
+    {'date': '2024-02-15', 'amount': Usd(1000, on_date='2024-02-15'),
+     'desc': 'US software license'},
+    {'date': '2024-09-03', 'amount': Usd(2500, on_date='2024-09-03'),
+     'desc': 'US enterprise deal'},
 
-# March 1: Sale in GBP (you have GBP account)
-sales.append({
-    'date': '2024-03-01',
-    'description': 'Consulting - UK',
-    'amount': CompanyMoney(800, 'GBP', on_date='2024-03-01'),
-    'converted_immediately': False
-})
-
-# April 10: Sale in Japanese Yen (no JPY account - converted immediately)
-sales.append({
-    'date': '2024-04-10',
-    'description': 'Software license - Japan',
-    'amount': CompanyMoney(50000, 'JPY', on_date='2024-04-10'),
-    'converted_immediately': True
-})
+    # Other currencies (converted to EUR immediately)
+    {'date': '2024-03-20', 'amount': Eur(800, £, on_date='2024-03-20'),
+     'desc': 'UK client', 'converted': True},
+    {'date': '2024-04-15', 'amount': Eur(50000, 'JPY', on_date='2024-04-15'),
+     'desc': 'Japan license', 'converted': True},
+    {'date': '2024-07-08', 'amount': Eur(1500, 'CHF', on_date='2024-07-08'),
+     'desc': 'Swiss consulting', 'converted': True},
+    {'date': '2024-10-25', 'amount': Eur(5000, 'SEK', on_date='2024-10-25'),
+     'desc': 'Nordic partnership', 'converted': True},
+]
 ```
 
-## Viewing Historical Data
+## Use Case 1: Year-End Reporting
 
-### Scenario 1: Year-End Financial Report
-You want to see all sales in EUR at their historical conversion rates:
+Show all transactions with their EUR value at the time of receipt:
 
 ```python
-# Each amount uses its original date for conversion
-for sale in sales:
-    print(f"{sale['date']}: {sale['description']}")
-    print(f"  Original: {sale['amount']}")
-    print(f"  In EUR: €{sale['amount'].amount():.2f}")
-    if sale['converted_immediately']:
-        print(f"  (Converted immediately - this is what you actually received)")
-    else:
-        print(f"  (Still held in {sale['amount'].currency} account)")
-    print()
+# Sum all transactions - automatic conversion to EUR using historical rates
+total = sum(tx['amount'] for tx in transactions)
+print(f"Total revenue: {total}")  # Shows as €X,XXX.XX
+
+# Detailed breakdown
+for tx in transactions:
+    amount = tx['amount']
+    # Original currency display and EUR conversion
+    print(f"{tx['date']}: {amount} = {amount.to('EUR')} - {tx['desc']}")
+```
+```plaintext
+Total revenue: €8120.59
+2024-01-10: €500.00 = €500.00 - Local client payment
+2024-06-22: €1200.00 = €1200.00 - EU consulting
+2024-02-15: $1000.00 = €932.60 - US software license
+2024-09-03: $2500.00 = €2260.00 - US enterprise deal
+2024-03-20: £800.00 = €936.74 - UK client
+2024-04-15: JP¥50000.00 = €306.63 - Japan license
+2024-07-08: CHF 1500.00 = €1546.89 - Swiss consulting
+2024-10-25: kr 5000.00 = €437.73 - Nordic partnership
 ```
 
-Output:
-```
-2024-01-15: Website sale - Thailand
-  Original: THB 5000.00
-  In EUR: €130.52
-  (Converted immediately - this is what you actually received)
+## Use Case 2: With EUR and USD accounts
 
-2024-01-20: Enterprise license - US
-  Original: $1000.00
-  In EUR: €921.38
-  (Still held in Currency.USD account)
-
-2024-03-01: Consulting - UK
-  Original: £800.00
-  In EUR: €931.20
-  (Still held in Currency.GBP account)
-
-2024-04-10: Software license - Japan
-  Original: ¥50000.00
-  In EUR: €307.45
-  (Converted immediately - this is what you actually received)
-```
-
-### Scenario 2: Current Portfolio Value
-You want to know the current value of money still held in foreign accounts:
+Assume that you have a USD bank account, and you did not convert the USD sales:
 
 ```python
+# Filter USD transactions
+
 # Create a Money class for today's rates
-CurrentMoney = Money(Currency.EUR, date.today())
+Today = Money(Currency.EUR)
 
-held_funds = [s for s in sales if not s['converted_immediately']]
-for sale in held_funds:
-    original = sale['amount']
-    current = CurrentMoney(original.amount(), original.currency)
+usd_amounts = [tx['amount'] for tx in transactions if tx['amount'].currency == Currency.USD]
+usd_amounts_today = [amount.on(Today.base_date) for amount in usd_amounts]
 
-    print(f"{original.currency} {original.amount()}")
-    print(f"  Value on {sale['date']}: €{original.amount(Currency.EUR):.2f}")
-    print(f"  Value today: €{current.amount():.2f}")
-    print(f"  Difference: €{(current - original).amount():.2f}")
+print(sum(usd_amounts_today))
+# €3012.10
+
+# What if you had converted the sales to EUR as they arrived?
+print(sum(usd_amounts))
+# €3192.60
 ```
 
-## The Power of Dated Money
+## Use Case 3: Simulating Conversion Timing
 
-1. **Historical Accuracy**: The THB and JPY sales show the EUR amount you actually received on those dates
+The impact of conversions in different dates:
 
-2. **Flexibility**: USD and GBP amounts can be converted using either:
-   - Historical rates (for "what was it worth then?")
-   - Current rates (for "what is it worth now?")
-
-3. **Audit Trail**: You can always trace back:
-   - Original amount and currency
-   - Date of transaction
-   - Conversion rate used
-
-4. **Natural Operations**: Calculate totals easily:
 ```python
-# Total sales in EUR (using historical rates)
-total_sales = sum(sale['amount'] for sale in sales)
-print(f"Total sales (historical): €{total_sales.amount():.2f}")
+# Your USD holdings from earlier transactions
+usd_balance = sum(usd_amounts)
 
-# For held currencies, you might want current values
-held_funds = [s['amount'] for s in sales if not s['converted_immediately']]
-current_value = sum(CurrentMoney(f.amount(), f.currency) for f in held_funds)
-print(f"Current value of held funds: €{current_value.amount():.2f}")
+# Compare conversion values on different dates
+conversion_dates = ['2024-06-01', '2024-09-15', '2024-12-01']
+
+print(f"USD Balance: {usd_balance}\n")
+print("Conversion simulation:")
+for date in conversion_dates:
+    eur_value = usd_balance.on(date).to('EUR')
+    print(f"  Convert on {date}: {eur_value}")
 ```
-
-## Best Practices for Your Use Case
-
-1. **Use transaction date** for all sales:
-   ```python
-   sale = CompanyMoney(amount, currency, on_date=transaction_date)
-   ```
-
-2. **Track conversion status** separately (as shown above)
-
-3. **For reporting**, distinguish between:
-   - Realized conversions (THB, JPY → EUR immediately)
-   - Unrealized gains/losses (USD, GBP still held)
-
-4. **For reconciliation**:
-   ```python
-   # What you actually received in EUR
-   realized_eur = sum(s['amount'] for s in sales if s['converted_immediately'])
-
-   # What's still in foreign accounts
-   unrealized = [s['amount'] for s in sales if not s['converted_immediately']]
-   ```
-
-This approach gives you the flexibility to handle both immediate conversions (for currencies without accounts) and deferred conversions (for currencies with accounts) while maintaining accurate historical records.
