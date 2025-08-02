@@ -1,10 +1,15 @@
+# test/test_money.py
+# Copyright 2022 Juan Reyero
+# SPDX-License-Identifier: MIT
+
+from datetime import date
 from decimal import Decimal as Dec
 
 from dated_money.currency import Currency
-from dated_money.money import Money
+from dated_money.money import DatedMoney, Money
 
 date_a = "2022-07-14"
-date_b = "2022-01-07"
+date_b = date(2022, 1, 7)
 
 
 def test_money_creation():
@@ -31,7 +36,7 @@ def test_money_creation():
     # Values can be created in any currency, independently of the
     # default currency of the class.
     assert Eur(20, "£") == Aud(20, "£")
-    assert Eur(20, "£").base_currency != Aud(20, "£").base_currency
+    assert Eur(20, "£").currency != Aud(20, "£").currency
 
     # Check EUR/USD conversion for date_a (1 EUR ≈ 1.0033 USD)
     assert abs((Eur(20.066, "$") - Eur(20, "€")).amount()) < Dec("0.01")
@@ -42,7 +47,7 @@ def test_money_creation():
     usd_amount = Eur(40).amount(Currency.USD)
     assert abs(usd_amount - Dec("40.1324")) < Dec("0.0001")
     assert str(Eur(40).to(Currency.USD)) == "$40.13"
-    assert str(Eur(40, "$")) == "$40.00"
+    assert str(Eur(40, "$")) == "€39.87"
 
     # Check USD cents conversion with tolerance
     usd_cents_converted = Eur(40).to("$").cents()
@@ -78,24 +83,13 @@ def test_money_dates():
 
     assert OldEur(20) == Eur(20)
 
-    # Comparisons are done in the base currency (in this case EUR). So
-    # before the comparisons the two dollar amounts are converted to
-    # euros, and they are both 20.
-    assert OldEur(20).to("$") == Eur(20).to("$")
+    assert OldEur(20).to("$") != Eur(20).to("$")
 
-    # We can set the date when creating the instance:
+    # We can reset the date when creating the instance:
     assert OldEur(20, on_date=date_a).to("$") == Eur(20).to("$")
 
     # The date of the converted value is inherited.
     assert OldEur(20).to("$").on_date == OldEur(20).on_date
-
-    # The class names include the date, or latest if it is today
-    # (which is the default when no date is assigned)
-    assert type(Eur(10)).__name__ == "Money_" + date_a
-    assert type(OldEur(10)).__name__ == "Money_" + date_b
-
-    TodaysEur = Money("€")
-    assert type(TodaysEur(10)).__name__ == "Money_current"
 
 
 def test_operations():
@@ -108,7 +102,6 @@ def test_operations():
     adds = OldEur(10) + Eur(30)
     assert adds.amount() == 40
     adds = Eur(30) + OldEur(10)
-    assert adds.on_date == Eur.base_date
 
     # An operation between two instances with different currencies
     # returns a result on the base currency.
@@ -122,7 +115,7 @@ def test_operations():
         20, "CAD", date_b
     )
     assert (Eur(10, "$", date_a) + Eur(20, "CAD", date_a)).currency == Currency.EUR
-    assert (Eur(10, "$", date_b) + Eur(20, "CAD", date_b)).on_date == Eur.base_date
+    assert (Eur(10, "$", date_b) + Eur(20, "CAD", date_b)).on_date == date_b
 
     assert sum(Eur(i) for i in range(10)) == Eur(45)
     assert Aud(10) + Eur(20) == Aud(39.70) == Eur(39.7, "aud")
@@ -130,8 +123,8 @@ def test_operations():
 
     assert Aud(10) + Eur(20) == Eur(20) + Aud(10)
 
-    assert (Aud(10) + Eur(20)).currency == Currency.AUD
-    assert (Eur(20) + Aud(10)).currency == Currency.EUR
+    assert (Aud(10) + Eur(20)).currency == Currency.EUR
+    assert (Eur(20) + Aud(10)).currency == Currency.AUD
 
     assert str(Eur(20, "aud") + Eur(20, "gbp")) == "€37.12"
     assert str(Aud(20, "aud") + Aud(20, "gbp")) == "A$55.12"
@@ -149,12 +142,14 @@ def test_operations():
 def test_repr():
     Eur = Money(Currency.EUR, date_a)
 
-    assert repr(Eur(20, "£")) == "GBP 20.00"
-    assert repr(Eur(20, "£", "2023-10-20")) == "2023-10-20 GBP 20.00"
+    assert repr(Eur(20, "£")) == "2022-07-14 EUR 23.65"
+    assert repr(Eur(20, "£", "2023-10-20")) == "2023-10-20 EUR 22.96"
 
-    assert Eur.parse("GBP 20.00") == Eur(20, "£")
+    assert DatedMoney.parse("2022-07-14 EUR 23.65") == Eur(20, "£")
 
-    # The base currency is the euro; a pound in 2023-10-20 is not the
-    # same as a pound in date_a
-    assert Eur.parse("2023-10-20 GBP 20.00") != Eur(20, "£")
-    assert Eur.parse("2023-10-20 GBP 20.00") == Eur(20, "£", "2023-10-20")
+    # A pound in 2023-10-20 is not the same as a pound in date_a
+    assert DatedMoney.parse("2023-10-20 GBP 20.00") != Eur(20, "£")
+
+    # But a pound in 2023-10-20 is a pound in 2023-10-20 regardless if
+    # I store it in pounds or euros.
+    assert DatedMoney.parse("2023-10-20 GBP 20.00") == Eur(20, "£", "2023-10-20")

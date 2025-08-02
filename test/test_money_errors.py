@@ -1,10 +1,14 @@
+# test/test_money_errors.py
+# Copyright 2025 Juan Reyero
+# SPDX-License-Identifier: MIT
+
 from decimal import Decimal, InvalidOperation
 from unittest.mock import patch
 
 import pytest
 
 from dated_money.currency import Currency
-from dated_money.money import Money, cents_str
+from dated_money.money import DatedMoney, Money, cents_str
 
 
 class TestMoneyErrorCases:
@@ -62,14 +66,13 @@ class TestMoneyErrorCases:
 
     def test_parse_invalid_string_format(self):
         """Test parsing of invalid string representations."""
-        Eur = Money(Currency.EUR, "2024-01-15")
         # Test with wrong number of components (just one)
         with pytest.raises(ValueError, match="Cannot parse money string"):
-            Eur.parse("single")
+            DatedMoney.parse("single")
 
         # Test with invalid amount
         with pytest.raises((InvalidOperation, ValueError)):
-            Eur.parse("EUR invalid_amount")
+            DatedMoney.parse("EUR invalid_amount")
 
     def test_division_by_zero(self):
         """Test division by zero."""
@@ -194,16 +197,6 @@ class TestMoneyEdgeCases:
         result = money.cents(Currency.EUR)
         assert result == Decimal("10000")
         mock_get_rates.assert_not_called()
-
-    def test_money_factory_with_string_currency(self):
-        """Test Money factory with string currency."""
-        # Test with currency code
-        Usd = Money("usd", "2024-01-15")
-        assert Usd.base_currency == "usd"  # String is stored as-is
-
-        # Test with Currency enum
-        Gbp = Money(Currency.GBP, "2024-01-15")
-        assert Gbp.base_currency == Currency.GBP
 
 
 class TestCentsString:

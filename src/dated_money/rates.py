@@ -1,3 +1,7 @@
+# dated_money.rates
+# Copyright 2022 Juan Reyero
+# SPDX-License-Identifier: MIT
+
 import json
 import os
 import sqlite3
@@ -35,9 +39,11 @@ def parse_date(dt: Union[date, str]) -> date:
     raise TypeError(f"Expected date or str, got {type(dt).__name__}")
 
 
-def parse_optional_date(dt: Union[str, date, None]) -> Union[date, None]:
+def parse_optional_date(
+    dt: Union[str, date, None], defaults_to: Optional[Union[str, date]] = None
+) -> Union[date, None]:
     if dt is None:
-        return None
+        return parse_date(defaults_to) if defaults_to is not None else None
     return parse_date(dt)
 
 

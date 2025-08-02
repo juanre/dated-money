@@ -1,3 +1,7 @@
+# dated_money.currency
+# Copyright 2022 Juan Reyero
+# SPDX-License-Identifier: MIT
+
 from enum import Enum
 from typing import Union
 

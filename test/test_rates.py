@@ -1,10 +1,14 @@
+# test/test_rates.py
+# Copyright 2025 Juan Reyero
+# SPDX-License-Identifier: MIT
+
 import json
 import sqlite3
 import tempfile
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -246,6 +250,7 @@ class TestGetRates:
 
                 # Retrieve from cache
                 rates = get_rates("2024-01-15", Currency.USD, Currency.EUR)
+                assert rates is not None
                 assert rates[Currency.USD] == Decimal("1.0")
                 assert rates[Currency.EUR] == Decimal("0.85")
 

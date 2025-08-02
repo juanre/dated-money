@@ -1,3 +1,7 @@
+# dated_money.logger
+# Copyright 2022 Juan Reyero
+# SPDX-License-Identifier: MIT
+
 import logging
 import sys
 from typing import Optional

@@ -1,4 +1,6 @@
-"""Test improved error handling for currency operations."""
+# test/test_currency_errors.py
+# Copyright 2025 Juan Reyero
+# SPDX-License-Identifier: MIT
 
 import pytest
 

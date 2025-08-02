@@ -1,6 +1,6 @@
 [project]
 name = "dated-money"
-version = "2.0.0"
+version = "2.1.0"
 description = "Compute with dated monetary values."
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ dependencies = [
     "requests>=2.31.0",
     "python-dateutil>=2.9.0.post0",
     "supabase>=2.11.0",
-    "python-dotenv>=1.0.1"
+    "python-dotenv>=1.0.1",
 ]
 
 [project.urls]
