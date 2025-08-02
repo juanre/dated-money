@@ -38,12 +38,15 @@ def register_sqlite_converters():
         ...         id INTEGER PRIMARY KEY,
         ...         amount DATEDMONEY
         ...     )
-        ... ''')
+        ... ''')  # doctest: +ELLIPSIS
+        <sqlite3.Cursor object at 0x...>
         >>>
         >>> # Store and retrieve DatedMoney objects
         >>> money = DatedMoney(100, 'EUR', '2024-01-01')
-        >>> cursor.execute("INSERT INTO transactions (amount) VALUES (?)", (money,))
-        >>> cursor.execute("SELECT amount FROM transactions")
+        >>> cursor.execute("INSERT INTO transactions (amount) VALUES (?)", (money,))  # doctest: +ELLIPSIS
+        <sqlite3.Cursor object at 0x...>
+        >>> cursor.execute("SELECT amount FROM transactions")  # doctest: +ELLIPSIS
+        <sqlite3.Cursor object at 0x...>
         >>> retrieved = cursor.fetchone()[0]
         >>> assert isinstance(retrieved, DatedMoney)
     """
