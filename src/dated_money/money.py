@@ -272,4 +272,5 @@ def DM(
     return _instantiate
 
 
+# Keeping for backwards compatibility
 Money = DM

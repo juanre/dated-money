@@ -1,30 +1,15 @@
-# `dated-money`
+# dated-money
 
-A Python library for manipulating monetary values with control over the date on which currency conversions take place. It represents each monetary value as an amount (stored as a Decimal in cents) and a currency, along with a corresponding date.
+A Python library for currency conversion with historical exchange rates.
 
-## Motivation
+## Overview
 
-If you're handling multi-currency transactions, you need to know not just "how much" but also "when" - because exchange rates change daily. This is critical for:
+The library provides monetary values that combine:
+- An amount (stored as Decimal, in cents)
+- A currency (ISO 4217 code)
+- An optional date for historical conversions
 
-- **Businesses receiving payments in multiple currencies**: Track the exact value received on the date of transaction
-- **Accurate financial reporting**: Use historical exchange rates for past transactions
-- **Multi-currency portfolios**: Keep amounts in their original currency until you decide to convert
-
-
-## Key Features
-
-- **Date-aware currency conversion**: Perform accurate conversions based on historical exchange rates
-- **Multiple rate sources**: Supports local repositories, Supabase, and exchangerate-api.com
-- **Automatic rate fallback**: If rates aren't available for a specific date, automatically searches up to 10 days back
-- **Type-safe**: Comprehensive type hints throughout the codebase
-
-
-## Features
-
-- Perform arithmetic operations on monetary values with different currencies and dates
-- Convert monetary values between currencies based on exchange rates for specific dates
-- Fetch and cache exchange rates from external APIs or local repositories
-- Flexible configuration through environment variables
+Exchange rates are fetched from multiple sources with automatic fallback.
 
 ## Installation
 
@@ -52,134 +37,108 @@ uv sync
 
 ## Usage
 
-### Example
-
-Imagine you run a European company receiving payments in multiple currencies:
+### Basic Usage
 
 ```python
-from dated_money import Money, Currency
+from dated_money import DM, DatedMoney, Currency
 
-# Your company's base currency
-CompanyMoney = Money(Currency.EUR)
+# Create a factory for EUR-based calculations
+Eur = DM('EUR', '2022-07-14')
 
-# Payment received in Thai Baht (immediately converted to EUR)
-thb_payment = CompanyMoney(5000, 'THB', on_date='2024-01-15')
-print(thb_payment)  # Shows in original currency: ฿5000.00
-print(thb_payment.to('EUR'))  # Shows in EUR: €130.52
+# All amounts created with Eur are in EUR base currency
+price = Eur(100)  # €100
+payment = Eur(50, 'USD')  # $50 converted to EUR (~€47)
+fee = Eur(20, 'GBP')  # £20 converted to EUR (~€23)
 
-# Payment received in USD (kept in USD account)
-usd_payment = CompanyMoney(1000, 'USD', on_date='2024-01-15')
-print(usd_payment)
-# Output: $1000.00
+# Addition is straightforward - all in EUR
+total = price + payment + fee
+assert total.currency == Currency.EUR
 
-# Calculate total revenue in EUR
-total = thb_payment + usd_payment
-print(f"Total revenue: {total}")
-# Output: Total revenue: €1051.90
+# Direct instantiation keeps original currency
+usd_amount = DatedMoney(50, 'USD', '2022-07-14')  # $50
+gbp_amount = DatedMoney(20, 'GBP', '2022-07-14')  # £20
+
+# Operations with DatedMoney instances
+# Result is in the second operand's currency
+result = usd_amount + gbp_amount  # Result in GBP
+assert result.currency == Currency.GBP
 ```
 
-### More Examples
+### API Reference
+
+#### DM Factory Function
+
+Creates a convenience function for instantiating monetary values with a default currency and date.
 
 ```python
-from decimal import Decimal as Dec
-from dated_money import Money, Currency
-
-# Create a Money class with EUR as the base currency and conversion rates from a specific date
-date_a = '2022-07-14'
-Eur = Money(Currency.EUR, date_a)
-
-# Create a Money class with AUD as the base currency and conversion rates from the same date
-Aud = Money(base_currency='A$', base_date=date_a)
-
-# Create monetary values in different currencies
-price_eur = Eur(100)  # €100
-price_usd = Eur(120, Currency.USD)  # $120
-price_gbp = Eur(80, '£')  # £80
-
-# Values are stored in cents and can be accessed in any currency
-assert Eur(23, '€').cents('eur') == 2300
-assert Eur(40).cents('usd') == Dec('4020.100502512562832012897042')
-
-# Values can be created in any currency, regardless of the base currency
-assert Eur(20, '£') == Aud(20, '£')
-
-# Perform arithmetic operations
-total = price_eur + price_usd + price_gbp
-assert str(total) == '€270.40'  # Total in the base currency (EUR)
-
-# Convert to a specific currency
-total_usd = total.to(Currency.USD)
-assert str(total_usd) == '$303.89'
-
-# Compare monetary values
-assert price_eur < price_usd
-assert price_gbp == Eur(80, Currency.GBP)
+DM(base_currency, base_date=None)
 ```
 
-### Operations with Different Currencies and Dates
+Parameters:
+- `base_currency`: Default currency (Currency enum or string)
+- `base_date`: Default date for conversions
 
-You can perform operations on monetary values with different currencies and conversion dates:
+Returns a function that creates `DatedMoney` instances:
 
 ```python
-date_a = '2022-07-14'
-date_b = '2022-01-07'
+Eur = DM('EUR', '2024-01-01')
 
-Eur = Money(Currency.EUR, date_a)
-OldEur = Money('€', date_b)
-Aud = Money(Currency.AUD, date_a)
+# Create euros
+price = Eur(100)  # €100
 
-# Operations between instances with different dates return an instance with the base date of the first element
-adds = OldEur(10) + Eur(30)
-assert adds.amount() == 40
-assert adds.on_date == OldEur.base_date
-
-# Operations between instances with different currencies return a result in the base currency
-result = Eur(10, '$') + Eur(20, 'CAD')
-assert result.currency == Currency.EUR
-
-# Changing the reference dates affects the operation results
-assert Eur(10, '$', date_a) + Eur(20, 'CAD', date_a) != Eur(10, '$', date_b) + Eur(20, 'CAD', date_b)
-
-# Perform various arithmetic operations
-assert Aud(10) + Eur(20) == Aud(39.70) == Eur(39.7, 'aud')
-assert Eur(20) + Aud(10) == Eur(26.73)
-assert (Aud(10) + Eur(20)).currency == Currency.AUD
-assert (Eur(20) + Aud(10)).currency == Currency.EUR
-assert Eur(20, 'aud') + Eur(20, 'gbp') == Aud(20, 'aud') + Aud(20, 'gbp')
+# Create other currencies (automatically converted to EUR base)
+payment = Eur(50, 'USD')  # $50 → EUR
 ```
 
-### Using a Single Money Class
+#### DatedMoney Class
 
-**Note**: `Money()` is a factory that returns a *class*, not an instance. You use it to create a customized Money class for your base currency, then create instances from that class.
-
-In normal use, you will probably create a single Money class with your preferred base currency and use it to handle monetary values in various currencies:
+Core class representing a monetary value.
 
 ```python
-Eur = Money(Currency.EUR)
-
-price_eur = Eur(100)  # €100
-price_usd = Eur(120, Currency.USD)  # $120
-price_gbp = Eur(80, '£')  # £80
-
-total = price_eur + price_usd + price_gbp
-assert str(total) == '€304.71'  # Total in the base currency (EUR)
-
-assert price_usd.currency == Currency.USD
-assert price_gbp.currency == Currency.GBP
+DatedMoney(amount, currency, on_date=None)
 ```
 
-### Configuring Exchange Rates
+Parameters:
+- `amount`: Numeric value or string. Append 'c' for cents (e.g., '1234c')
+- `currency`: Currency enum or ISO code string
+- `on_date`: Date string 'YYYY-MM-DD' or date object
 
-`dated-money` supports multiple sources for exchange rates, checked in this order:
+Methods:
+- `cents(in_currency=None, on_date=None)`: Get amount in cents
+- `amount(currency=None, rounding=False)`: Get decimal amount
+- `to(currency, on_date=None)`: Convert to another currency
+- `on(date)`: Create new instance with different date
 
-1. **Local SQLite cache** (fastest)
-2. **Local git repository** (for offline use)
-3. **Supabase** (for shared team rates)
-4. **exchangerate-api.com** (for fresh rates)
+### Arithmetic Operations
 
-#### Rate Fallback Behavior
+- Addition/subtraction converts to the second operand's currency
+- Multiplication/division with scalars preserves currency
+- Division between DatedMoney instances returns a Decimal ratio
+- Comparisons use the second operand's currency for conversion
 
-If exchange rates are not available for the requested date, `dated-money` automatically searches for rates from previous dates, going back up to 10 days. This ensures that currency conversions work even on weekends or holidays when fresh rates might not be available. When fallback rates are used, a log message indicates which date's rates were actually used.
+```python
+a = DatedMoney(100, 'EUR')
+b = DatedMoney(50, 'USD')
+
+# Result is in USD (second operand)
+result = a + b  # Converts EUR to USD, adds
+assert result.currency == Currency.USD
+
+# Scalar operations
+doubled = a * 2
+assert doubled.cents() == 20000
+assert doubled.currency == Currency.EUR
+```
+
+### Exchange Rate Sources
+
+Rates are fetched in order:
+1. Local SQLite cache
+2. Git repository (if configured)
+3. Supabase (if configured)
+4. exchangerate-api.com
+
+Missing rates trigger automatic fallback to previous dates (up to 10 days).
 
 #### Environment Variables
 
@@ -191,42 +150,24 @@ If exchange rates are not available for the requested date, `dated-money` automa
 
 - `DMON_EXCHANGERATE_API_KEY`: API key for exchangerate-api.com (required for historical rates on paid plans)
 
-#### Rate File Format
-
-Rate files should be named `yyyy-mm-dd-rates.json` and contain:
-
-
-```
-    {
-     "conversion_rates":{
-      "USD":1,
-      "AED":3.6725,
-      "AFN":71.3141,
-    ...}
-    }
+Rate files: `yyyy-mm-dd-rates.json` with structure:
+```json
+{"conversion_rates": {"USD": 1, "EUR": 0.85, ...}}
 ```
 
-### Cache Database Location
+Cache locations:
+- macOS: `~/Library/Caches/dated_money/exchange-rates.db`
+- Linux: `~/.cache/dated_money/exchange-rates.db`
+- Windows: `%LOCALAPPDATA%\dated_money\cache\exchange-rates.db`
+- Override with `DMON_RATES_CACHE`
 
-By default, the cache database is stored in platform-specific locations:
-- **macOS**: `~/Library/Caches/dated_money/exchange-rates.db`
-- **Linux**: `~/.cache/dated_money/exchange-rates.db` (or `$XDG_CACHE_HOME/dated_money/exchange-rates.db`)
-- **Windows**: `%LOCALAPPDATA%\dated_money\cache\exchange-rates.db`
+### Cache Management
 
-You can override this by setting the `DMON_RATES_CACHE` environment variable to your preferred directory.
+```bash
+# Create cache table
+dmon-rates --create-table
 
-### Creating the Cache Database
-
-The cache database is created automatically when you first use the library. To manually create it or populate it with historical data:
-
-1. Create the database cache table:
-   ```
-   dmon-rates --create-table
-   ```
-
-2. If you have a paid API key for https://exchangerate-api.com, you can populate your cache with historical data:
-
-```
+# Fetch historical rates (requires paid API key)
 dmon-rates --fetch-rates 2021-10-10:2021-10-20
 ```
 
@@ -259,11 +200,9 @@ uv run ruff check src/ test/
 uv run mypy src/
 ```
 
-## Additional Resources
+## Backwards Compatibility
 
-- [Real-World Use Case](https://github.com/juanre/dated-money/blob/main/docs/real_world_use_case.md) - Detailed example: multi-currency business with mixed bank accounts
-- [Currency Operations Explained](https://github.com/juanre/dated-money/blob/main/docs/currency_operations_explained.md) - Technical guide on how operations work
-- [Transaction Analysis Example](https://github.com/juanre/dated-money/tree/main/examples) - Working code showing the impact of historical exchange rates
+`Money` is maintained as an alias to `DM` for backwards compatibility.
 
 ## Contributing
 
