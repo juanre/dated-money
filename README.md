@@ -42,26 +42,41 @@ uv sync
 ```python
 from dated_money import DM, DatedMoney, Currency
 
-# Create a factory for EUR-based calculations
-Eur = DM('EUR', '2022-07-14')
+# Create factories using currency codes or symbols
+Eur = DM('EUR', '2022-07-14')  # Using ISO code
+Usd = DM('$', '2022-07-14')    # Using currency symbol
+Gbp = DM('£', '2022-07-14')    # Common symbols: $, €, £, ¥, etc.
 
 # All amounts created with Eur are in EUR base currency
 price = Eur(100)  # €100
-payment = Eur(50, 'USD')  # $50 converted to EUR (~€47)
-fee = Eur(20, 'GBP')  # £20 converted to EUR (~€23)
+payment = Eur(50, Currency.USD)  # $50 converted to EUR (~€47)
+fee = Eur(20, '£')  # £20 converted to EUR (~€23) - symbols work here too
 
 # Addition is straightforward - all in EUR
 total = price + payment + fee
 assert total.currency == Currency.EUR
 
 # Direct instantiation keeps original currency
-usd_amount = DatedMoney(50, 'USD', '2022-07-14')  # $50
-gbp_amount = DatedMoney(20, 'GBP', '2022-07-14')  # £20
+usd_amount = DatedMoney(50, '$', '2022-07-14')  # Using symbol
+gbp_amount = DatedMoney(20, 'GBP', '2022-07-14')  # Using ISO code
 
 # Operations with DatedMoney instances
-# Result is in the second operand's currency
+# Result is in the last operand's currency
 result = usd_amount + gbp_amount  # Result in GBP
 assert result.currency == Currency.GBP
+
+# String representation and parsing
+money = DatedMoney(100.50, 'EUR', '2022-07-14')
+print(str(money))   # €100.50
+print(repr(money))  # 2022-07-14 EUR 100.50
+
+# Parse from string representation
+parsed = DatedMoney.parse('2022-07-14 EUR 100.50')
+assert parsed == money
+
+# Parse without date
+parsed_no_date = DatedMoney.parse('EUR 100.50')
+assert parsed_no_date.currency == Currency.EUR
 ```
 
 ### API Reference
@@ -75,18 +90,22 @@ DM(base_currency, base_date=None)
 ```
 
 Parameters:
-- `base_currency`: Default currency (Currency enum or string)
-- `base_date`: Default date for conversions
+- `base_currency`: Default currency - accepts:
+  - ISO code: 'EUR', 'USD', 'GBP' (case-insensitive)
+  - Currency symbol: '$', '€', '£', '¥', etc.
+  - Currency enum: Currency.EUR
+- `base_date`: Default date for conversions (optional)
 
 Returns a function that creates `DatedMoney` instances:
 
 ```python
-Eur = DM('EUR', '2024-01-01')
+# Various ways to create factories
+Eur = DM('EUR', '2024-01-01')  # ISO code
+Usd = DM('$')                   # Symbol, current date
+Gbp = DM(Currency.GBP)          # Enum
 
-# Create euros
+# Create monetary values
 price = Eur(100)  # €100
-
-# Create other currencies (automatically converted to EUR base)
 payment = Eur(50, 'USD')  # $50 → EUR
 ```
 
@@ -100,14 +119,22 @@ DatedMoney(amount, currency, on_date=None)
 
 Parameters:
 - `amount`: Numeric value or string. Append 'c' for cents (e.g., '1234c')
-- `currency`: Currency enum or ISO code string
-- `on_date`: Date string 'YYYY-MM-DD' or date object
+- `currency`: Accepts:
+  - ISO code: 'EUR', 'USD', 'GBP' (case-insensitive)
+  - Currency symbol: '$', '€', '£', '¥', etc.
+  - Currency enum: Currency.EUR
+- `on_date`: Date string 'YYYY-MM-DD' or date object (optional)
 
 Methods:
 - `cents(in_currency=None, on_date=None)`: Get amount in cents
 - `amount(currency=None, rounding=False)`: Get decimal amount
 - `to(currency, on_date=None)`: Convert to another currency
 - `on(date)`: Create new instance with different date
+- `parse(string)`: Parse from string representation (class method)
+
+String representations:
+- `str(money)`: Display format with symbol, e.g., "€100.50"
+- `repr(money)`: Parseable format, e.g., "2022-07-14 EUR 100.50" or "EUR 100.50"
 
 ### Arithmetic Operations
 
@@ -173,7 +200,7 @@ dmon-rates --fetch-rates 2021-10-10:2021-10-20
 
 ## Development
 
-This project uses modern Python development tools:
+This project uses:
 
 - **uv** for package management
 - **black** for code formatting
