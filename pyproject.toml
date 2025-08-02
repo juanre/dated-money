@@ -44,6 +44,7 @@ dev = [
     "isort>=6.0.1",
     "mypy>=1.17.0",
     "pre-commit>=4.2.0",
+    "psycopg2-binary>=2.9.10",
     "pytest>=8.4.1",
     "ruff>=0.12.5",
     "types-python-dateutil>=2.9.0.20250708",

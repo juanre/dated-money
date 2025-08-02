@@ -109,6 +109,12 @@ def main():
             print(f"Skipping code block {i} (JSON structure example)")
             continue
 
+        if "psycopg2.connect" in code:
+            # Skip PostgreSQL example that requires database connection
+            print(f"\n{'='*60}")
+            print(f"Skipping code block {i} (PostgreSQL example - requires database)")
+            continue
+
         if test_code_block(code, i):
             passed += 1
         else:

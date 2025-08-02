@@ -49,8 +49,8 @@ Gbp = DM('£', '2022-07-14')    # Common symbols: $, €, £, ¥, etc.
 
 # All amounts created with Eur are in EUR base currency
 price = Eur(100)  # €100
-payment = Eur(50, Currency.USD)  # $50 converted to EUR (~€47)
-fee = Eur(20, '£')  # £20 converted to EUR (~€23) - symbols work here too
+payment = Eur(50, Currency.USD)  # $50 converted to EUR (~ €47)
+fee = Eur(20, '£')  # £20 converted to EUR (~ €23) - symbols work here too
 
 # Addition is straightforward - all in EUR
 total = price + payment + fee
@@ -61,7 +61,7 @@ usd_amount = DatedMoney(50, '$', '2022-07-14')  # Using symbol
 gbp_amount = DatedMoney(20, 'GBP', '2022-07-14')  # Using ISO code
 
 # Operations with DatedMoney instances
-# Result is in the last operand's currency
+# Result is in the last operand's currency and date
 result = usd_amount + gbp_amount  # Result in GBP
 assert result.currency == Currency.GBP
 
@@ -196,6 +196,86 @@ dmon-rates --create-table
 
 # Fetch historical rates (requires paid API key)
 dmon-rates --fetch-rates 2021-10-10:2021-10-20
+```
+
+## Database Serialization
+
+DatedMoney objects can be stored in SQLite and PostgreSQL databases.
+
+### SQLite
+
+DatedMoney implements the SQLite adapter protocol via `__conform__`, allowing automatic serialization:
+
+```python
+import sqlite3
+from dated_money import DatedMoney, register_sqlite_converters
+
+# Enable automatic conversion
+register_sqlite_converters()
+
+# Create connection with type detection
+conn = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
+cursor = conn.cursor()
+
+# Create table with DATEDMONEY type
+cursor.execute('''
+    CREATE TABLE transactions (
+        id INTEGER PRIMARY KEY,
+        amount DATEDMONEY,
+        description TEXT
+    )
+''')
+
+# Store DatedMoney objects
+money = DatedMoney(100.50, 'EUR', '2024-01-01')
+cursor.execute("INSERT INTO transactions (amount, description) VALUES (?, ?)",
+               (money, "Payment"))
+
+# Retrieve with automatic conversion
+cursor.execute("SELECT amount FROM transactions")
+retrieved = cursor.fetchone()[0]
+assert isinstance(retrieved, DatedMoney)
+assert retrieved == money
+```
+
+### PostgreSQL
+
+For PostgreSQL, use the helper functions for conversion:
+
+```python
+import psycopg2
+from dated_money import DatedMoney
+from dated_money.db_serialization import to_postgres, from_postgres
+
+# Connect to PostgreSQL
+conn = psycopg2.connect(dbname='your_db', user='your_user', host='localhost')
+cursor = conn.cursor()
+
+# Create table
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        amount TEXT,
+        description TEXT
+    )
+''')
+conn.commit()
+
+# Store DatedMoney
+money = DatedMoney(100.50, 'EUR', '2024-01-01')
+cursor.execute(
+    "INSERT INTO transactions (amount, description) VALUES (%s, %s)",
+    (to_postgres(money), "Payment")
+)
+conn.commit()
+
+# Retrieve and convert
+cursor.execute("SELECT amount FROM transactions WHERE id = %s", (1,))
+row = cursor.fetchone()
+retrieved = from_postgres(row[0])
+assert retrieved == money
+
+conn.close()
 ```
 
 ## Development
