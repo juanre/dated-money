@@ -9,7 +9,19 @@ import sys
 from pathlib import Path
 
 # Set up test database for consistent results
-os.environ["DMON_RATES_CACHE"] = str(Path(__file__).parent / "test" / "res")
+# Use a copy to avoid modifying the original
+test_cache_dir = Path(__file__).parent.parent / "test" / "test_cache"
+test_cache_dir.mkdir(exist_ok=True)
+
+# Copy original database if needed
+original_db = Path(__file__).parent.parent / "test" / "res" / "exchange-rates.db"
+test_db = test_cache_dir / "exchange-rates.db"
+if original_db.exists() and not test_db.exists():
+    import shutil
+
+    shutil.copy2(original_db, test_db)
+
+os.environ["DMON_RATES_CACHE"] = str(test_cache_dir)
 
 
 def extract_code_blocks(readme_path):
@@ -51,7 +63,7 @@ def test_code_block(code, block_num):
 
 def main():
     """Main test runner."""
-    readme_path = Path(__file__).parent / "README.md"
+    readme_path = Path(__file__).parent.parent / "README.md"
 
     if not readme_path.exists():
         print("ERROR: README.md not found")
