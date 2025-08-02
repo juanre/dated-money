@@ -101,8 +101,8 @@ Returns a function that creates `DatedMoney` instances:
 ```python
 # Various ways to create factories
 Eur = DM('EUR', '2024-01-01')  # ISO code
-Usd = DM('$')                   # Symbol, current date
-Gbp = DM(Currency.GBP)          # Enum
+Usd = DM('$', '2024-01-01')     # Symbol with date
+Gbp = DM(Currency.GBP, '2024-01-01')  # Enum with date
 
 # Create monetary values
 price = Eur(100)  # €100
@@ -144,8 +144,8 @@ String representations:
 - Comparisons use the second operand's currency for conversion
 
 ```python
-a = DatedMoney(100, 'EUR')
-b = DatedMoney(50, 'USD')
+a = DatedMoney(100, 'EUR', '2024-01-01')
+b = DatedMoney(50, 'USD', '2024-01-01')
 
 # Result is in USD (second operand)
 result = a + b  # Converts EUR to USD, adds
