@@ -1,5 +1,5 @@
 # dated_money.db_serialization
-# Copyright 2022 Juan Reyero
+# Copyright 2025 Juan Reyero
 # SPDX-License-Identifier: MIT
 
 """Database serialization support for DatedMoney objects.
@@ -20,35 +20,34 @@ def register_sqlite_converters():
     This enables automatic conversion of DatedMoney objects when storing
     and retrieving from SQLite databases.
 
-    Example:
-        >>> import sqlite3
-        >>> from dated_money import DatedMoney
-        >>> from dated_money.db_serialization import register_sqlite_converters
-        >>>
-        >>> # Register converters
-        >>> register_sqlite_converters()
-        >>>
-        >>> # Create connection with type detection
-        >>> conn = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
-        >>> cursor = conn.cursor()
-        >>>
-        >>> # Create table with DATEDMONEY type
-        >>> cursor.execute('''
-        ...     CREATE TABLE transactions (
-        ...         id INTEGER PRIMARY KEY,
-        ...         amount DATEDMONEY
-        ...     )
-        ... ''')  # doctest: +ELLIPSIS
-        <sqlite3.Cursor object at 0x...>
-        >>>
-        >>> # Store and retrieve DatedMoney objects
-        >>> money = DatedMoney(100, 'EUR', '2024-01-01')
-        >>> cursor.execute("INSERT INTO transactions (amount) VALUES (?)", (money,))  # doctest: +ELLIPSIS
-        <sqlite3.Cursor object at 0x...>
-        >>> cursor.execute("SELECT amount FROM transactions")  # doctest: +ELLIPSIS
-        <sqlite3.Cursor object at 0x...>
-        >>> retrieved = cursor.fetchone()[0]
-        >>> assert isinstance(retrieved, DatedMoney)
+    >>> import sqlite3
+    >>> from dated_money import DatedMoney
+    >>> from dated_money.db_serialization import register_sqlite_converters
+    >>>
+    >>> # Register converters
+    >>> register_sqlite_converters()
+    >>>
+    >>> # Create connection with type detection
+    >>> conn = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
+    >>> cursor = conn.cursor()
+    >>>
+    >>> # Create table with DATEDMONEY type
+    >>> cursor.execute('''
+    ...     CREATE TABLE transactions (
+    ...         id INTEGER PRIMARY KEY,
+    ...         amount DATEDMONEY
+    ...     )
+    ... ''')  # doctest: +ELLIPSIS
+    <sqlite3.Cursor object at 0x...>
+    >>>
+    >>> # Store and retrieve DatedMoney objects
+    >>> money = DatedMoney(100, 'EUR', '2024-01-01')
+    >>> cursor.execute("INSERT INTO transactions (amount) VALUES (?)", (money,))  # doctest: +ELLIPSIS
+    <sqlite3.Cursor object at 0x...>
+    >>> cursor.execute("SELECT amount FROM transactions")  # doctest: +ELLIPSIS
+    <sqlite3.Cursor object at 0x...>
+    >>> retrieved = cursor.fetchone()[0]
+    >>> assert isinstance(retrieved, DatedMoney)
     """
 
     def convert_datedmoney(value: bytes) -> DatedMoney:
