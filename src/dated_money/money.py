@@ -113,7 +113,7 @@ class DatedMoney:
             on_date: Optional conversion date.
 
         Returns:
-            New BaseMoney instance in the target currency
+            New DatedMoney instance in the target currency
         """
         return DatedMoney(
             cents_str(self.cents(currency)),
@@ -128,7 +128,7 @@ class DatedMoney:
             on_date: Date string in yyyy-mm-dd format
 
         Returns:
-            New BaseMoney instance with the specified date
+            New DatedMoney instance with the specified date
         """
         return DatedMoney(cents_str(self._cents), currency=self.currency, on_date=on_date)
 
@@ -136,7 +136,7 @@ class DatedMoney:
         """Convert both money amounts to the currency of other for operating.
 
         Args:
-            o: Other BaseMoney instance to normalize
+            o: Other DatedMoney instance to normalize
 
         Returns:
             Tuple of (self_cents, other_cents) in the currency of other
